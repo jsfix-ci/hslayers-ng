@@ -68,12 +68,14 @@ export class HsLayerManagerMetadataService {
 
   /**
    * @function queryMetadata
-   * @memberOf HsLayermanagerMetadata.service
    * @param {Layer} layer Selected layer
    * @description Callback function, adds getCapabilities response metadata to layer object
    */
   async queryMetadata(layer: Layer) {
     const url = this.HsLayerUtilsService.getURL(layer);
+    if (!url || url.length < 1) {
+      return false;
+    }
     const metadata = {
       metainfo: {'OnlineResource': layer.get('Metadata')},
     };

@@ -344,7 +344,7 @@ export class HsUtilsService {
     return this._instanceOf(obj, type);
   }
 
-  _instanceOf(obj: any, klass: any): boolean {
+  private _instanceOf(obj: any, klass: any): boolean {
     if (this.isFunction(klass)) {
       return obj instanceof klass;
     }

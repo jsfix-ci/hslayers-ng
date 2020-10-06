@@ -138,6 +138,9 @@ export class HsLayerUtilsService {
   }
   // todo
   getURL(layer: Layer): string {
+    if (this.layerInvalid(layer)) {
+      return;
+    }
     let url;
     if (layer.getSource().getUrls) {
       //Multi tile
@@ -149,10 +152,9 @@ export class HsLayerUtilsService {
     }
     return url;
   }
+
   /**
-   * @ngdoc method
-   * @name HsLayerUtilsService#isLayerVectorLayer
-   * @param {Ol.layer} layer Selected layer
+   * @param {Layer} layer Selected layer
    * @returns {boolean} True for Vector layer
    * @description Test if layer is Vector layer
    */
@@ -277,11 +279,14 @@ export class HsLayerUtilsService {
   /**
    * @ngdoc method
    * @name HsLayerUtilsService#layerInvalid
-   * @param {Ol.layer} layer Selected layer
+   * @param {Layer} layer Selected layer
    * @returns {boolean} True invalid, false valid source
-   * @description Test if layers source is validly loaded (!true for invalid)
+   * @description Test if layers source is validly loaded (true for invalid!)
    */
   layerInvalid(layer: Layer): boolean {
+    if (!layer.getSource()) {
+      return true;
+    }
     return layer.getSource().error;
   }
 }

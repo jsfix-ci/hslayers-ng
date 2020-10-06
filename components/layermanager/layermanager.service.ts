@@ -13,6 +13,7 @@ import {HsLayerManagerWmstService} from './layermanager-wmst.service';
 import {HsLayerSelectorService} from './layer-selector.service';
 import {HsLayerUtilsService} from '../utils/layer-utils.service';
 import {HsLayoutService} from '../layout/layout.service';
+import {HsLogService} from '../../common/log/log.service';
 import {HsMapService} from '../map/map.service';
 import {HsUtilsService} from '../utils/utils.service';
 import {ImageWMS} from 'ol/source';
@@ -100,6 +101,7 @@ export class HsLayerManagerService {
     private HsUtilsService: HsUtilsService,
     private HsLayerUtilsService: HsLayerUtilsService,
     private HsConfig: HsConfig,
+    private HsLogService: HsLogService,
     private HsLayermanagerWmstService: HsLayerManagerWmstService,
     private HsLayerEditorVectorLayerService: HsLayerEditorVectorLayerService,
     private HsLayerManagerMetadata: HsLayerManagerMetadataService,
@@ -649,6 +651,10 @@ export class HsLayerManagerService {
    * @param {Layer} layer Layer which is being added
    */
   loadingEvents(layer: Layer): void {
+    if (!layer.getSource()) {
+      this.HsLogService.error(`Layer '${layer.get('title')}' has no source`);
+      return;
+    }
     const source = layer.getSource();
     source.loadCounter = 0;
     source.loadTotal = 0;

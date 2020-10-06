@@ -59,7 +59,7 @@ export class HsLegendService {
    * @returns {Array<string>} Array of simplified lowercase names of geometry types encountered in layer
    */
   getVectorFeatureGeometry(currentLayer: Layer): string[] {
-    if (currentLayer === undefined) {
+    if (!currentLayer || !currentLayer.getSource()) {
       return;
     }
     const found = this.findFeatureGeomTypes(
@@ -116,7 +116,7 @@ export class HsLegendService {
    * @returns {Array} Array of serialized unique style descriptions encountered when looping through first 100 features
    */
   getStyleVectorLayer(currentLayer: VectorLayer): Array<any> {
-    if (currentLayer === undefined) {
+    if (!currentLayer || !currentLayer.getSource()) {
       return;
     }
     let styleArray = [];

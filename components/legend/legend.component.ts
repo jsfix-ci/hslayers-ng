@@ -31,7 +31,7 @@ export class HsLegendComponent {
     if (descriptor) {
       this.layerDescriptors.push(descriptor);
       layer.on('change:visible', (e) => this.layerVisibilityChanged(e));
-      layer.getSource().on('change', (e) => this.layerSourcePropChanged(e));
+      layer.getSource()?.on('change', (e) => this.layerSourcePropChanged(e));
     }
   }
 
