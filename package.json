@@ -73,6 +73,7 @@
     "start-hsl-proxy": "node lib/proxy.js"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.15.1",
     "angular": "^1.7.9",
     "angular-animate": "^1.7.9",
     "angular-aria": "^1.7.9",
@@ -94,6 +95,7 @@
     "clipboard": "^2.0.4",
     "cors-anywhere": "^0.4.1",
     "dynamic-pub-path-plugin": "0.0.4",
+    "font-awesome": "^4.7.0",
     "gyronorm": "^2.0.6",
     "hammerjs": "^2.0.8",
     "hoek": "6.1.3",

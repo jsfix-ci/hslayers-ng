@@ -105,9 +105,25 @@ this.selector = new Select({
 		}
 	},
 	style: function (feature) {
-		return feature.getLayer().get('selectedStyle')
-			|| DEFAULT_STYLES[feature.getGeometry().getType()]
-			|| null;
+		var conditionalStyles = feature.getLayer().get('conditionalStyles');
+		var style;
+		if (conditionalStyles){
+			conditionalStyles.forEach((item, i) => {
+				var atr = feature.get(item['attribute']);
+				if (atr > item['value']){
+					style = item['selectedStyle'];
+				}
+			});
+		};
+
+		if (style){
+			return style;
+		}
+		else{
+				return feature.getLayer().get('selectedStyle')
+					|| DEFAULT_STYLES[feature.getGeometry().getType()]
+					|| null;
+			}
 	}
 });
 

@@ -118,11 +118,27 @@ export default function (
   $scope.highlighter = new Select({
     condition: pointerMove,
     style: function (feature) {
-      return (
-        feature.getLayer().get('highlightedStyle') ||
-        HsQueryVectorService.DEFAULT_STYLES[feature.getGeometry().getType()] ||
-        null
-      );
+      var conditionalStyles = feature.getLayer().get('conditionalStyles');
+      var style;
+      if (conditionalStyles){
+        conditionalStyles.forEach((item, i) => {
+    			var atr = feature.get(item['attribute']);
+    			if (atr > item['value']){
+            style = item['highlightedStyle'];
+    			}
+    		});
+      };
+
+      if (style){
+        return style;
+      }else{
+        return (
+          feature.getLayer().get('highlightedStyle') ||
+          HsQueryVectorService.DEFAULT_STYLES[feature.getGeometry().getType()] ||
+          null
+        );
+      }
+
     },
     filter: function (feature) {
       return feature !== HsLayermanagerService.currentLayer.selectedFeature;

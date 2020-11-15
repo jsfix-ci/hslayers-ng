@@ -151,6 +151,7 @@ export default function (
       hsFilters: layer.get('hsFilters'),
       selectedStyle: layer.get('selectedStyle'),
       highlightedStyle: layer.get('highlightedStyle'),
+      conditionalStyles: layer.get('conditionalStyles'),
       uid: HsUtilsService.generateUuid(),
       idString() {
         return 'layer' + (this.coded_path || '') + (this.uid || '');
