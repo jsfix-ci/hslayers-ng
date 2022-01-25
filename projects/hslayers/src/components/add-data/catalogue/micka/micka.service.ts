@@ -11,7 +11,7 @@ import {
   HsEndpoint,
   isErrorHandlerFunction,
 } from '../../../../common/endpoints/endpoint.interface';
-import {HsAddDataLayerDescriptor} from '../add-data-layer-descriptor.model';
+import {HsAddDataLayerDescriptor} from '../layer-descriptor.model';
 import {HsLanguageService} from '../../../language/language.service';
 import {HsLogService} from '../../../../common/log/log.service';
 import {HsMapService} from '../../../map/map.service';
@@ -181,7 +181,7 @@ export class HsMickaBrowserService {
             this.hsMapService.getCurrentProj()
           );
           if (extentFeature) {
-            lyr.feature = extentFeature;
+            lyr.featureId = extentFeature.getId();
             data.extentFeatureCreated(extentFeature);
           }
         }
@@ -197,8 +197,7 @@ export class HsMickaBrowserService {
    * Parse query parameter into encoded key value pair.
    */
   private param2Query(which: string, query): string {
-    const dataset =
-      'type=dataset OR type=nonGeographicDataset OR type=series OR type=tile';
+    const dataset = 'type=dataset OR type=series OR type=tile';
     if (query[which] !== undefined) {
       if (which == 'type' && query[which] == 'data') {
         //Special case for type 'data' because it can contain many things

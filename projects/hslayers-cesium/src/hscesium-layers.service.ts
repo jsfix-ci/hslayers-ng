@@ -23,11 +23,6 @@ import {DataSource, ImageryLayer} from 'cesium';
 import {GeoJSON, KML} from 'ol/format';
 import {Geometry} from 'ol/geom';
 import {Group} from 'ol/layer';
-import {ImageWMS, Source} from 'ol/source';
-import {OSM, TileWMS} from 'ol/source';
-import {OlCesiumObjectMapItem} from './ol-cesium-object-map-item.class';
-import {default as proj4} from 'proj4';
-
 import {
   HsConfig,
   HsEventBusService,
@@ -38,15 +33,20 @@ import {
   getTitle,
 } from 'hslayers-ng';
 import {HsLayerUtilsService} from 'hslayers-ng';
+import {ImageWMS, Source} from 'ol/source';
+import {OSM, TileWMS} from 'ol/source';
+import {OlCesiumObjectMapItem} from './ol-cesium-object-map-item.class';
+import {default as proj4} from 'proj4';
+
+import {HsCesiumConfig} from './hscesium-config.service';
 import {ParamCacheMapItem} from './param-cache-map-item.class';
+import {generateUuid} from 'hslayers-ng';
 
 /**
- * @param proxy.proxy
- * @param proxy
- * @param maxResolution
- * @param proxy.maxResolution
- * @param proxy.HsUtilsService
- * @param proxy.projection
+ * @param proxy -
+ * @param maxResolution -
+ * @param HsUtilsService -
+ * @param projection -
  */
 function MyProxy({proxy, maxResolution, HsUtilsService, projection}) {
   this.proxy = proxy;
@@ -69,6 +69,7 @@ export class HsCesiumLayersService {
     public HsConfig: HsConfig,
     public HsUtilsService: HsUtilsService,
     public HsEventBusService: HsEventBusService,
+    public HsCesiumConfig: HsCesiumConfig,
     private HsLayerUtilsService: HsLayerUtilsService
   ) {}
 
@@ -80,11 +81,6 @@ export class HsCesiumLayersService {
     this.setupEvents();
   }
 
-  /**
-   * @param HsConfig
-   * @param $location
-   * @param HsCesiumLayersService
-   */
   defineProxy() {
     MyProxy.prototype.getURL = function (resource) {
       const blank_url = `${this.proxy}${window.location.protocol}//${window.location.host}${window.location.pathname}img/blank.png`;
@@ -131,9 +127,9 @@ export class HsCesiumLayersService {
   }
 
   /**
-   * @param version
-   * @param srs
-   * @param crs
+   * @param version -
+   * @param srs -
+   * @param crs -
    */
   getProjectFromVersion(version, srs, crs) {
     if (version == '1.1.1') {
@@ -153,7 +149,7 @@ export class HsCesiumLayersService {
             'https://assets.agi.com/stk-terrain/v1/tilesets/world/tiles'
           ) {
             const terrain_provider = createWorldTerrain(
-              this.HsConfig.createWorldTerrainOptions
+              this.HsCesiumConfig.createWorldTerrainOptions
             );
             this.viewer.terrainProvider = terrain_provider;
           } else {
@@ -175,7 +171,7 @@ export class HsCesiumLayersService {
 
   /**
    * @public
-   * @description Add all layers from app HsConfig (box_layers and default_layers) to the map. Only layers specified in visible_layers parameter will get instantly visible.
+   * Add all layers from app HsConfig (box_layers and default_layers) to the map. Only layers specified in visible_layers parameter will get instantly visible.
    */
   async repopulateLayers() {
     if (this.viewer.isDestroyed()) {
@@ -205,6 +201,9 @@ export class HsCesiumLayersService {
     features.forEach((feature) => {
       const featureId = feature.getId();
       if (featureId == undefined) {
+        const id = generateUuid();
+        feature.setId(id);
+        feature.set('HsCesiumFeatureId', id);
         return;
       }
       if (

@@ -60,19 +60,16 @@ export class HsLegendComponent extends HsPanelBaseComponent {
       this.layerDescriptors.push(descriptor);
       this.refreshList();
       layer.on('change:visible', (e) => this.layerVisibilityChanged(e));
-      layer.on('change', (e) => {
-        const layer: Layer<Source> = e.target as Layer<Source>;
-        const oldDescriptor = this.findLayerDescriptor(layer);
-        this.hsLegendService
-          .getLayerLegendDescriptor(layer)
-          .then((newDescriptor) => {
-            this.layerDescriptors[
-              this.layerDescriptors.indexOf(oldDescriptor)
-            ] = newDescriptor;
-          });
-      });
-
-      layer.getSource().on('change', (e) => this.layerSourcePropChanged(e));
+      if (this.hsLayerUtilsService.isLayerWMS(layer)) {
+        layer.getSource().on('change', (e) => {
+          this.hsUtilsService.debounce(
+            this.layerSourcePropChanged(e),
+            100,
+            false,
+            this
+          );
+        });
+      }
     }
   }
 
@@ -175,7 +172,6 @@ export class HsLegendComponent extends HsPanelBaseComponent {
         });
     }
   }
-
   /**
    * Finds layer descriptor for OpenLayers layer
    * @param layer - OpenLayers layer

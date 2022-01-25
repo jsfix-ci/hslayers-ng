@@ -1,8 +1,10 @@
 import {Injectable} from '@angular/core';
+
 import {Subject} from 'rxjs';
 
+import {AddDataUrlType} from './types/url.type';
 import {HsDialogContainerService} from '../../layout/dialogs/dialog-container.service';
-import {HsGetCapabilitiesErrorComponent} from '../common/capabilities-error-dialog/capabilities-error-dialog.component';
+import {HsGetCapabilitiesErrorComponent} from './../common/capabilities-error-dialog/capabilities-error-dialog.component';
 import {HsLanguageService} from '../../language/language.service';
 import {HsLayoutService} from '../../layout/layout.service';
 import {HsLogService} from '../../../common/log/log.service';
@@ -12,7 +14,9 @@ import {HsLogService} from '../../../common/log/log.service';
 })
 export class HsAddDataUrlService {
   addDataCapsParsingError: Subject<{e: any; context: any}> = new Subject();
-  hasAnyChecked: boolean;
+  addingAllowed: boolean;
+  typeSelected: AddDataUrlType;
+  connectFromParams = true;
   constructor(
     public hsLog: HsLogService,
     public hsLanguageService: HsLanguageService,
@@ -27,6 +31,11 @@ export class HsAddDataUrlService {
         error = this.hsLanguageService.getTranslationIgnoreNonExisting(
           'ADDLAYERS',
           'serviceTypeNotMatching'
+        );
+      } else {
+        error = this.hsLanguageService.getTranslationIgnoreNonExisting(
+          'ADDLAYERS',
+          error
         );
       }
       this.hsDialogContainerService.create(
@@ -120,7 +129,8 @@ export class HsAddDataUrlService {
     }, 1000);
   }
 
-  searchForChecked(services: Array<any>): void {
-    this.hasAnyChecked = services.some((service) => service.checked);
+  searchForChecked(records: Array<any>): void {
+    this.addingAllowed =
+      records?.some((l) => l.checked) ?? this.typeSelected == 'arcgis';
   }
 }

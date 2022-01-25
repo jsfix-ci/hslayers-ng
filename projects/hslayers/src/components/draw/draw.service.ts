@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import {Injectable, NgZone} from '@angular/core';
 import {Subject} from 'rxjs';
 
 import Collection from 'ol/Collection';
@@ -8,7 +8,7 @@ import {Cluster, Source} from 'ol/source';
 import {DragBox, Draw, Modify, Snap} from 'ol/interaction';
 import {DrawEvent} from 'ol/interaction/Draw';
 import {Geometry} from 'ol/geom';
-import {HsAddDataVectorService} from '../add-data/vector/add-data-vector.service';
+import {HsAddDataVectorService} from '../add-data/vector/vector.service';
 import {HsCommonLaymanService} from '../../common/layman/layman.service';
 import {HsConfig} from '../../config.service';
 import {HsConfirmDialogComponent} from './../../common/confirm/confirm-dialog.component';
@@ -97,7 +97,7 @@ export class HsDrawService {
   isAuthorized: boolean;
   onlyMine = true;
   addedLayersRemoved = false;
-  layerMetadataDialog: Subject<any> = new Subject();
+  layerMetadataDialog: Subject<void> = new Subject();
 
   //Layer being loaded from layman (endpoint url pending)
   pendingLayers = [];
@@ -125,7 +125,8 @@ export class HsDrawService {
     public HsAddDataVectorService: HsAddDataVectorService,
     public HsUtilsService: HsUtilsService,
     public HsCommonLaymanService: HsCommonLaymanService,
-    public hsToastService: HsToastService
+    public hsToastService: HsToastService,
+    private zone: NgZone
   ) {
     this.keyUp = this.keyUp.bind(this);
     this.HsMapService.loaded().then((map) => {
@@ -171,8 +172,7 @@ export class HsDrawService {
 
     this.HsCommonLaymanService.authChange.subscribe((endpoint: any) => {
       this.fillDrawableLayers();
-      this.isAuthorized =
-        endpoint.user !== 'anonymous' && endpoint.user !== 'browser';
+      this.isAuthorized = endpoint.authenticated;
       //When metadata dialog window opened. Layer is being added
       if (this.selectedLayer && this.tmpDrawLayer) {
         setWorkspace(this.selectedLayer, endpoint.user);
@@ -390,8 +390,18 @@ export class HsDrawService {
       this.HsLayoutService.setMainPanel('info');
     }
     setTimeout(() => {
+      this.addFeatureToSelector(e.feature);
+    });
+  }
+
+  /**
+   * Adds drawn feature to selection
+   */
+  addFeatureToSelector(feature) {
+    //Zone is used to ensure change detection updates the view
+    this.zone.run(() => {
       this.HsQueryBaseService.clearData('features');
-      this.HsQueryVectorService.selector.getFeatures().push(e.feature);
+      this.HsQueryVectorService.selector.getFeatures().push(feature);
       this.HsQueryVectorService.createFeatureAttributeList();
     });
   }
@@ -656,7 +666,6 @@ export class HsDrawService {
       });
 
       this.draw.setActive(drawState);
-
       this.HsMapService.loaded().then((map) => {
         map.addInteraction(this.draw);
       });

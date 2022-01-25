@@ -9,7 +9,7 @@ import {
   ImageStatic as Static,
   TileArcGISRest,
   TileWMS,
-  Vector,
+  Vector as VectorSource,
   WMTS,
   XYZ,
 } from 'ol/source';
@@ -30,9 +30,10 @@ import {
   PinchRotate,
   PinchZoom,
 } from 'ol/interaction';
+import {Feature, Kinetic, Map, MapBrowserEvent, View} from 'ol';
+import {Geometry} from 'ol/geom';
 import {Group, Layer} from 'ol/layer';
 import {Injectable, Renderer2, RendererFactory2} from '@angular/core';
-import {Kinetic, Map, MapBrowserEvent, View} from 'ol';
 import {Projection, transform, transformExtent} from 'ol/proj';
 import {platformModifierKeyOnly as platformModifierKeyOnlyCondition} from 'ol/events/condition';
 import {register} from 'ol/proj/proj4';
@@ -46,6 +47,7 @@ import {
   getBase,
   getDimensions,
   getEnableProxy,
+  getRemovable,
   getTitle,
 } from '../../common/layer-extensions';
 
@@ -137,6 +139,8 @@ export class HsMapService {
   element: any;
   visible: boolean;
   featureLayerMapping = {};
+  /** Copy of the default_view for map resetting purposes */
+  originalView: {center: number[]; zoom: number; rotation: number};
 
   constructor(
     public HsConfig: HsConfig,
@@ -178,31 +182,7 @@ export class HsMapService {
     }
     let layer_;
     const layersToLookFor = [];
-    const check = (layer) => {
-      const source = layer.getSource();
-      if (this.HsUtilsService.instOf(source, Cluster)) {
-        layersToLookFor.push({
-          layer,
-          source,
-        });
-        layersToLookFor.push({
-          layer,
-          source: source.getSource(),
-        });
-      } else if (this.HsUtilsService.instOf(source, Vector)) {
-        layersToLookFor.push({
-          layer,
-          source,
-        });
-      }
-    };
-    this.map.getLayers().forEach((layer) => {
-      if (this.HsUtilsService.instOf(layer, Group)) {
-        (layer as Group).getLayers().forEach(check);
-      } else {
-        check(layer);
-      }
-    });
+    this.getVectorLayers(layersToLookFor);
     for (const obj of layersToLookFor) {
       let found = false;
       if (obj.source.getFeatureById) {
@@ -226,6 +206,56 @@ export class HsMapService {
     }
     return layer_;
   }
+
+  getVectorLayers(
+    layersToLookFor: {
+      source: VectorSource<Geometry> | Cluster;
+      layer: Layer<Source>;
+    }[]
+  ): void {
+    const check = (layer) => {
+      const source = layer.getSource();
+      if (this.HsUtilsService.instOf(source, Cluster)) {
+        layersToLookFor.push({
+          layer,
+          source,
+        });
+        layersToLookFor.push({
+          layer,
+          source: source.getSource(),
+        });
+      } else if (this.HsUtilsService.instOf(source, VectorSource)) {
+        layersToLookFor.push({
+          layer,
+          source,
+        });
+      }
+    };
+    this.map.getLayers().forEach((layer) => {
+      if (this.HsUtilsService.instOf(layer, Group)) {
+        (layer as Group).getLayers().forEach(check);
+      } else {
+        check(layer);
+      }
+    });
+  }
+
+  getFeatureById(fid: string): Feature<Geometry> {
+    if (this.featureLayerMapping[fid]) {
+      return this.featureLayerMapping[fid].getSource().getFeatureById(fid);
+    } else {
+      const layersToLookFor: {
+        source: VectorSource<Geometry> | Cluster;
+        layer: Layer<Source>;
+      }[] = [];
+      this.getVectorLayers(layersToLookFor);
+      const obj = layersToLookFor.find((obj) => obj.source.getFeatureById(fid));
+      if (obj) {
+        return obj.source.getFeatureById(fid);
+      }
+    }
+  }
+
   createDefaultViewButton() {
     const button = this.renderer.createElement('button');
     button.addEventListener(
@@ -292,15 +322,19 @@ export class HsMapService {
         controls: this.controls,
         target: this.mapElement,
         interactions: [],
-        view: this.cloneView(
-          this.HsConfig.default_view || this.createPlaceholderView()
-        ),
+        view: this.HsConfig.default_view ?? this.createPlaceholderView(),
       });
+      const view = this.map.getView();
+      this.originalView = {
+        center: view.getCenter(),
+        zoom: view.getZoom(),
+        rotation: view.getRotation(),
+      };
 
-      this.map.getView().on('change:center', (e) => {
+      view.on('change:center', (e) => {
         this.extentChanged(e);
       });
-      this.map.getView().on('change:resolution', (e) => {
+      view.on('change:resolution', (e) => {
         this.extentChanged(e);
       });
 
@@ -379,6 +413,14 @@ export class HsMapService {
       '+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs'
     );
     proj4.defs('EPSG:4326', '+proj=longlat +datum=WGS84 +no_defs');
+    proj4.defs(
+      'EPSG:3995',
+      '+proj=stere +lat_0=90 +lat_ts=71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs'
+    );
+    proj4.defs(
+      'EPSG:3031',
+      '+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs'
+    );
     register(proj4);
     if (this.HsConfig.componentsEnabled?.mapControls == false) {
       this.removeAllControls();
@@ -399,15 +441,6 @@ export class HsMapService {
         });
       }
     });
-  }
-
-  //clone View to not overwrite default
-  /**
-   * @param template
-   */
-  cloneView(template: View): View {
-    const view = new View((template as any).options_);
-    return view;
   }
 
   /**
@@ -584,7 +617,7 @@ export class HsMapService {
       lyr.setVisible(this.layerTitleInArray(lyr, visibleOverride));
     }
     const source = lyr.getSource();
-    if (this.HsUtilsService.instOf(source, Vector)) {
+    if (this.HsUtilsService.instOf(source, VectorSource)) {
       this.getVectorType(lyr);
     }
     this.proxifyLayer(lyr);
@@ -605,7 +638,7 @@ export class HsMapService {
   repopulateLayers(visibilityOverrides) {
     if (this.HsConfig.box_layers) {
       this.HsConfig.box_layers.forEach((box) => {
-        for (const lyr of box.getLayers().getArray()) {
+        for (const lyr of box.getLayers().getArray() as Layer<Source>[]) {
           this.addLayer(lyr, DuplicateHandling.IgnoreNew, visibilityOverrides);
         }
       });
@@ -689,9 +722,9 @@ export class HsMapService {
    * @description Reset map view to view configured in app config
    */
   resetView() {
-    this.map.setView(
-      this.cloneView(this.HsConfig.default_view || this.createPlaceholderView())
-    );
+    this.map.getView().setCenter(this.originalView.center);
+    this.map.getView().setZoom(this.originalView.zoom);
+    this.map.getView().setRotation(this.originalView.rotation);
   }
 
   /**
@@ -841,9 +874,13 @@ export class HsMapService {
 
   removeAllLayers() {
     const to_be_removed = [];
-    this.map.getLayers().forEach((lyr) => {
-      to_be_removed.push(lyr);
-    });
+    this.map
+      .getLayers()
+      .getArray()
+      .filter((layer) => getRemovable(layer as Layer<Source>) !== false)
+      .forEach((lyr) => {
+        to_be_removed.push(lyr);
+      });
     while (to_be_removed.length > 0) {
       this.map.removeLayer(to_be_removed.shift());
     }

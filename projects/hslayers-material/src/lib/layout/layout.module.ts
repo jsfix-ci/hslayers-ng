@@ -24,7 +24,6 @@ import {HsMatOverlayComponent} from './overlay.component';
     HsMapModule,
   ],
   providers: [HsLayoutService],
-  entryComponents: [HsMatLayoutComponent, HsMatOverlayComponent],
-  exports: [HsMatLayoutComponent, HsMatOverlayComponent],
+  exports: [HsMatLayoutComponent, HsMatOverlayComponent]
 })
 export class HsMatLayoutModule {}

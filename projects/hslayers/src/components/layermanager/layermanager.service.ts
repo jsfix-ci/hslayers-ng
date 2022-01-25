@@ -13,9 +13,9 @@ import {
   Vector as VectorLayer,
 } from 'ol/layer';
 import {Injectable, NgZone} from '@angular/core';
-import {METERS_PER_UNIT} from 'ol/proj';
 
 import {HS_PRMS} from '../permalink/get-params';
+import {HsAddDataOwsService} from '../add-data/url/add-data-ows.service';
 import {HsBaseLayerDescriptor} from './base-layer-descriptor.interface';
 import {HsConfig} from '../../config.service';
 import {HsDimensionTimeService} from '../../common/get-capabilities/dimension-time.service';
@@ -26,9 +26,9 @@ import {
   HsLayerDescriptor,
   HsLayerLoadProgress,
 } from './layer-descriptor.interface';
-import {HsLayerEditorVectorLayerService} from './layer-editor-vector-layer.service';
+import {HsLayerEditorVectorLayerService} from './editor/layer-editor-vector-layer.service';
 import {HsLayerManagerMetadataService} from './layermanager-metadata.service';
-import {HsLayerSelectorService} from './layer-selector.service';
+import {HsLayerSelectorService} from './editor/layer-selector.service';
 import {HsLayerUtilsService} from '../utils/layer-utils.service';
 import {HsLayoutService} from '../layout/layout.service';
 import {HsLogService} from '../../common/log/log.service';
@@ -40,9 +40,11 @@ import {
   getAbstract,
   getActive,
   getBase,
+  getCachedCapabilities,
   getCluster,
   getExclusive,
   getLegends,
+  getName,
   getPath,
   getQueryCapabilities,
   getRemovable,
@@ -50,7 +52,9 @@ import {
   getThumbnail,
   getTitle,
   setActive,
+  setName,
   setPath,
+  setTitle,
 } from '../../common/layer-extensions';
 
 @Injectable({
@@ -67,7 +71,7 @@ export class HsLayerManagerService {
     terrainlayers: any[];
     baselayersVisible: boolean;
     baselayer?: string;
-    box_layers?: any[];
+    box_layers?: Group[];
     filter: string;
   } = {
     /**
@@ -138,6 +142,7 @@ export class HsLayerManagerService {
     public HsLog: HsLogService,
     public HsMapService: HsMapService,
     public HsQueuesService: HsQueuesService,
+    public HsAddDataOwsService: HsAddDataOwsService,
     private HsShareUrlService: HsShareUrlService,
     public HsUtilsService: HsUtilsService,
     public sanitizer: DomSanitizer,
@@ -153,7 +158,9 @@ export class HsLayerManagerService {
           const layerDescriptor = this.data.layers.find(
             (ld) => ld.layer == olLayer
           );
-          this.HsDimensionTimeService.setupTimeLayer(layerDescriptor);
+          if (layerDescriptor) {
+            this.HsDimensionTimeService.setupTimeLayer(layerDescriptor);
+          }
         }
       }
     );
@@ -248,6 +255,10 @@ export class HsLayerManagerService {
       layerDescriptor.thumbnail = this.getImage(layer);
       this.data.baselayers.push(<HsBaseLayerDescriptor>layerDescriptor);
     }
+
+    if (!getName(layer)) {
+      setName(layer, getTitle(layer));
+    }
     //*NOTE Commented out, because the  following references to this.data.baselayer are causing issues.
 
     // if (layer.getVisible() && getBase(layer)) {
@@ -270,6 +281,9 @@ export class HsLayerManagerService {
   getLayerSourceType(layer: Layer<Source>): string {
     if (this.HsLayerUtilsService.isLayerKMLSource(layer)) {
       return `vector (KML)`;
+    }
+    if (this.HsLayerUtilsService.isLayerGPXSource(layer)) {
+      return `vector (GPX)`;
     }
     if (this.HsLayerUtilsService.isLayerGeoJSONSource(layer)) {
       return `vector (GeoJSON)`;
@@ -370,12 +384,11 @@ export class HsLayerManagerService {
   }
 
   sortLayersByZ(arr: any[]): any[] {
-    const minus = this.HsConfig.reverseLayerList || false;
+    const minus = this.HsConfig.reverseLayerList ?? true;
     return arr.sort((a, b) => {
       a = a.layer.getZIndex();
       b = b.layer.getZIndex();
-      const tmp = (a < b ? -1 : a > b ? 1 : 0) * (minus ? -1 : 1);
-      return tmp;
+      return (a < b ? -1 : a > b ? 1 : 0) * (minus ? -1 : 1);
     });
   }
 
@@ -846,8 +859,9 @@ export class HsLayerManagerService {
           });
         }
       }, 2000);
+    } else {
+      progress.loaded = progress.loadTotal > 0 ? false : true;
     }
-    progress.loaded = !(progress.loadTotal > 0 && progress.loaded);
 
     let percents = 100.0;
     if (progress.loadTotal > 0) {
@@ -882,17 +896,7 @@ export class HsLayerManagerService {
    * @param lyr - Selected layer
    */
   isLayerInResolutionInterval(lyr: Layer<Source>): boolean {
-    let cur_res;
-    if (this.isWms(lyr)) {
-      const view = this.HsMapService.map.getView();
-      const resolution = view.getResolution();
-      const units = view.getProjection().getUnits();
-      const dpi = 25.4 / 0.28;
-      const mpu = METERS_PER_UNIT[units];
-      cur_res = resolution * mpu * 39.37 * dpi;
-    } else {
-      cur_res = this.HsMapService.map.getView().getResolution();
-    }
+    const cur_res = this.HsMapService.map.getView().getResolution();
     this.currentResolution = cur_res;
     return (
       lyr.getMinResolution() <= cur_res && cur_res <= lyr.getMaxResolution()
@@ -995,7 +999,7 @@ export class HsLayerManagerService {
     this.data.folders.sub_folders.sort(
       (a, b) =>
         (a.zIndex < b.zIndex ? -1 : a.zIndex > b.zIndex ? 1 : 0) *
-        (this.HsConfig.reverseLayerList ? -1 : 1)
+        (this.HsConfig.reverseLayerList ?? true ? -1 : 1)
     );
   }
 
@@ -1006,15 +1010,15 @@ export class HsLayerManagerService {
    */
   async init(): Promise<void> {
     this.map = this.HsMapService.map;
-    this.HsMapService.map.getLayers().forEach((lyr: Layer<Source>) => {
-      this.applyZIndex(lyr);
-      this.layerAdded(
+    for (const lyr of this.HsMapService.map.getLayers().getArray()) {
+      this.applyZIndex(lyr as Layer<Source>);
+      await this.layerAdded(
         {
-          element: lyr,
+          element: lyr as Layer<Source>,
         },
         true
       );
-    });
+    }
     this.sortFoldersByZ();
     this.sortLayersByZ(this.data.layers);
     this.HsEventBusService.layerManagerUpdates.next();
@@ -1180,5 +1184,80 @@ export class HsLayerManagerService {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     }, 0);
+  }
+
+  /*
+    Creats a copy of the currentLayer
+  */
+  async copyLayer(newTitle: string): Promise<void> {
+    const copyTitle = this.createCopyTitle(newTitle);
+    if (this.HsLayerUtilsService.isLayerVectorLayer(this.currentLayer.layer)) {
+      this.copyVectorLayer(copyTitle);
+    } else {
+      const url = this.HsLayerUtilsService.getURL(this.currentLayer.layer);
+      const name =
+        getCachedCapabilities(this.currentLayer.layer)?.Name ??
+        getName(this.currentLayer.layer);
+      const layerAdded = await this.HsAddDataOwsService.connectToOWS({
+        type: this.getLayerSourceType(this.currentLayer.layer).toLowerCase(),
+        uri: url,
+        layer: name,
+      });
+      setTitle(layerAdded[0], copyTitle);
+    }
+  }
+
+  /*
+    Creats a copy of the currentLayer if it is a vector layer
+  */
+  copyVectorLayer(newTitle: string): void {
+    let features;
+    if (this.HsLayerUtilsService.isLayerClustered(this.currentLayer.layer)) {
+      features = (this.currentLayer.layer.getSource() as Cluster)
+        .getSource()
+        ?.getFeatures();
+    } else {
+      features = (
+        this.currentLayer.layer.getSource() as VectorSource<Geometry>
+      )?.getFeatures();
+    }
+
+    const copiedLayer = new VectorLayer({
+      properties: this.currentLayer.layer.getProperties(),
+      source: new VectorSource({
+        features,
+      }),
+      style: (
+        this.currentLayer.layer as VectorLayer<VectorSource<Geometry>>
+      ).getStyle(),
+    });
+    setTitle(copiedLayer, newTitle);
+    this.HsMapService.addLayer(copiedLayer);
+  }
+
+  /*
+    Creats a new title for the copied layer
+  */
+  createCopyTitle(newTitle: string): string {
+    const layerName = getName(this.currentLayer.layer);
+    let copyTitle = getTitle(this.currentLayer.layer);
+    let numb = 0;
+    if (newTitle && newTitle !== copyTitle) {
+      copyTitle = newTitle;
+    } else {
+      const layerCopies = this.HsMapService.getLayersArray().filter(
+        (l) => getName(l) == layerName
+      );
+      layerCopies.forEach((l) => {
+        const numberInTitle = Number(getTitle(l).replace(/\D/g, ''));
+        if (numberInTitle > numb) {
+          numb = numberInTitle;
+        }
+      });
+      numb !== 0
+        ? (copyTitle = layerName + ` (${numb + 1})`)
+        : (copyTitle = copyTitle + ' (1)');
+    }
+    return copyTitle;
   }
 }

@@ -23,8 +23,8 @@
         <div class="input-group mb-2" [hidden]="!addCompositionUrlVisible">
             <input type="text" class="form-control" [placeholder]="'COMPOSITIONS.Address'|translate"
                 [(ngModel)]="urlToAdd" [ngModelOptions]="{standalone: true}">
-                <button type="button" class="btn btn-secondary" (click)="addCompositionUrl(urlToAdd)"><i
-                        class="icon-link"></i></button>
+            <button type="button" class="btn btn-secondary" (click)="addCompositionUrl(urlToAdd)"><i
+                    class="icon-link"></i></button>
         </div>
     </div>
     <div class="mx-3 ps-1 d-flex justify-content-between">
@@ -32,21 +32,20 @@
             <input type="search" class="form-control border-end-0" [placeholder]="'COMMON.search'|translate"
                 name="search" [(ngModel)]="hsCompositionsCatalogueService.data.query.title"
                 (ngModelChange)="loadFilteredCompositions()">
-                <button class="input-group-text text-secondary border-start-0"
-                    (click)="loadFilteredCompositions()">
-                    <i class="icon-search icon-primary"></i>
-                </button>
+            <button class="input-group-text text-secondary border-start-0" (click)="loadFilteredCompositions()">
+                <i class="icon-search icon-primary"></i>
+            </button>
         </div>
         <hs-layman-current-user [endpoint]="hsLaymanService.getLaymanEndpoint()"></hs-layman-current-user>
     </div>
     <div class="d-flex ms-4 me-3 justify-content-between py-1 ">
         <div class="d-flex">
-            <div class="input-group-text border-0 ps-0">
+            <div class="input-group-text border-0">
                 <input type="checkbox" [(ngModel)]="hsCompositionsCatalogueService.filterByExtent"
                     (change)='loadFilteredCompositions()' name="hsCompositionsCatalogueService.filterByExtent">
                 <span class="ms-1">{{'COMPOSITIONS.filterByMap' | translate}}</span>
             </div>
-            <div class="input-group-text border-0"
+            <div class="input-group-text border-0 ms-1"
                 *ngIf="hsLaymanService.getLaymanEndpoint() && !hsLaymanService.isLaymanGuest()">
                 <input type="checkbox" [(ngModel)]="hsCompositionsCatalogueService.filterByOnlyMine"
                     (change)='loadFilteredCompositions()' name="hsCompositionsCatalogueService.filterByOnlyMine">
@@ -146,8 +145,8 @@
                         </tr>
                         <tr>
                             <td colspan="2" style="text-align: center; vertical-align: middle;">
-                                <button class="btn w-100 btn-light hs-background-alfa"
-                                    style="border-radius: 0.25rem;" (click)="clearFilters()">
+                                <button class="btn w-100 btn-light hs-background-alfa" style="border-radius: 0.25rem;"
+                                    (click)="clearFilters()">
                                     {{'COMPOSITIONS.clearFilters' | translate}}</button>
                             </td>
                         </tr>
@@ -160,12 +159,6 @@
         <div class="card d-flex" style="font-size: 1rem !important;">
             <div class="card-body">
                 <ul class="list-group">
-                    <li class="list-group-item text-primary text-center py-2"
-                        *ngIf="hsCompositionsCatalogueService.dataLoading"><img class="pe-2"
-                            [src]="hsUtilsService.getAjaxLoaderIcon()" />{{'COMMON.loading' | translate}}</li>
-                    <li [hidden]="hsCompositionsCatalogueService.compositionEntries.length > 0 || hsCompositionsCatalogueService.dataLoading"
-                        class="list-group-item">
-                        {{'DATASOURCE_SELECTOR.noResults' | translate}}</li>
                     <li *ngFor="let composition of hsCompositionsCatalogueService.compositionEntries"
                         [hidden]="hsCompositionsCatalogueService.dataLoading" class="list-group-item clearfix"
                         style="cursor: pointer;" [ngClass]="{'hs-endpoint-item-active' : composition.highlighted}"
@@ -176,9 +169,17 @@
                         <hs-compositions-list-item [composition]="composition" [selectedCompId]="selectedCompId">
                         </hs-compositions-list-item>
                     </li>
+                    <li class="list-group-item text-primary text-center py-2"
+                        *ngIf="hsCompositionsCatalogueService.dataLoading"><img class="pe-2"
+                            [src]="hsUtilsService.getAjaxLoaderIcon()" />{{'COMMON.loading' | translate}}</li>
+                    <li [hidden]="hsCompositionsCatalogueService.compositionEntries.length > 0 || hsCompositionsCatalogueService.dataLoading"
+                        class="list-group-item">
+                        {{'DATASOURCE_SELECTOR.noResults' | translate}}</li>
                 </ul>
             </div>
-            <hs-pager [pagerService]="hsCompositionsCatalogueService"></hs-pager>
+            <ng-container *ngIf="hsCompositionsCatalogueService.matchedRecords !== 0 && !hsCompositionsCatalogueService.dataLoading">
+                <hs-pager [pagerService]="hsCompositionsCatalogueService"></hs-pager>
+            </ng-container>
         </div>
     </div>
 </div>

@@ -4,12 +4,14 @@ import Feature from 'ol/Feature';
 import GeoJSON from 'ol/format/GeoJSON';
 import Point from 'ol/geom/Point';
 import {Circle, Fill, Stroke, Style} from 'ol/style';
-import {OSM, Vector as VectorSource, XYZ} from 'ol/source';
+import {OSM, TileWMS, Vector as VectorSource, XYZ} from 'ol/source';
 import {Tile} from 'ol/layer';
 import {Vector as VectorLayer} from 'ol/layer';
 
 import {HsConfig} from 'hslayers-ng/src/config.service';
 import {HsEventBusService} from 'hslayers-ng/src/components/core/event-bus.service';
+import {HsQueryPopupWidgetContainerService} from 'hslayers-ng/src/public-api';
+import {PopupWidgetComponent} from './popup-widget.component';
 
 @Component({
   selector: 'hslayers-app',
@@ -19,7 +21,8 @@ import {HsEventBusService} from 'hslayers-ng/src/components/core/event-bus.servi
 export class HslayersAppComponent {
   constructor(
     public HsConfig: HsConfig,
-    private HsEventBusService: HsEventBusService
+    private HsEventBusService: HsEventBusService,
+    private HsQueryPopupWidgetContainerService: HsQueryPopupWidgetContainerService
   ) {
     const count = 200;
     const features = new Array(count);
@@ -58,6 +61,11 @@ export class HslayersAppComponent {
               ],
             ],
           },
+          'properties': {
+            'name': 'Poly 3',
+            'id': 'poly1',
+            'population': Math.floor(Math.random() * 100000),
+          },
         },
         {
           'type': 'Feature',
@@ -72,6 +80,11 @@ export class HslayersAppComponent {
                 [-2e6, 6e6],
               ],
             ],
+          },
+          'properties': {
+            'name': 'Poly 2',
+            'id': 'poly2',
+            'population': Math.floor(Math.random() * 100000),
           },
         },
         {
@@ -88,6 +101,10 @@ export class HslayersAppComponent {
               ],
             ],
           },
+          'properties': {
+            'name': 'Poly 4',
+            'population': Math.floor(Math.random() * 100000),
+          },
         },
         {
           'type': 'Feature',
@@ -102,9 +119,116 @@ export class HslayersAppComponent {
               ],
             ],
           },
+          'properties': {
+            'name': 'Poly 1',
+            'population': Math.floor(Math.random() * 100000),
+          },
         },
       ],
     };
+    const points = new VectorLayer({
+      properties: {
+        title: 'Points',
+        synchronize: false,
+        swipeSide: 'left',
+        cluster: false,
+        inlineLegend: true,
+        popUp: {
+          attributes: ['name', 'population'],
+        },
+        editor: {
+          editable: true,
+          defaultAttributes: {
+            name: 'New bookmark',
+            description: 'none',
+          },
+        },
+        sld: `<?xml version="1.0" encoding="ISO-8859-1"?>
+            <StyledLayerDescriptor version="1.0.0" 
+                xsi:schemaLocation="http://www.opengis.net/sld StyledLayerDescriptor.xsd" 
+                xmlns="http://www.opengis.net/sld" 
+                xmlns:ogc="http://www.opengis.net/ogc" 
+                xmlns:xlink="http://www.w3.org/1999/xlink" 
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+              <NamedLayer>
+                <Name>Simple point with stroke</Name>
+                <UserStyle>
+                  <Title>Default</Title>
+                  <FeatureTypeStyle>
+                    <Rule>
+                      <PointSymbolizer>
+                        <Graphic>
+                          <Mark>
+                            <WellKnownName>circle</WellKnownName>
+                            <Fill>
+                              <CssParameter name="fill">#FF0000</CssParameter>
+                            </Fill>
+                            <Stroke>
+                              <CssParameter name="stroke">#000000</CssParameter>
+                              <CssParameter name="stroke-width">2</CssParameter>
+                            </Stroke>
+                          </Mark>
+                          <Size>6</Size>
+                        </Graphic>
+                      </PointSymbolizer>
+                    </Rule>
+                  </FeatureTypeStyle>
+                </UserStyle>
+              </NamedLayer>
+            </StyledLayerDescriptor>
+            `,
+        path: 'User generated',
+      },
+      source: new VectorSource({features}),
+    });
+    const polygonSld = `<?xml version="1.0" encoding="ISO-8859-1"?>
+            <StyledLayerDescriptor version="1.0.0" 
+                xsi:schemaLocation="http://www.opengis.net/sld StyledLayerDescriptor.xsd" 
+                xmlns="http://www.opengis.net/sld" 
+                xmlns:ogc="http://www.opengis.net/ogc" 
+                xmlns:xlink="http://www.w3.org/1999/xlink" 
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+              <NamedLayer>
+                <Name>Simple point with stroke</Name>
+                <UserStyle>
+                  <Title>Default</Title>
+                  <FeatureTypeStyle>
+                    <Rule>
+                    <PolygonSymbolizer>
+                    <Fill>
+                      <CssParameter name="fill">#000080</CssParameter>
+                    </Fill>
+                  </PolygonSymbolizer>
+                    </Rule>
+                  </FeatureTypeStyle>
+                </UserStyle>
+              </NamedLayer>
+            </StyledLayerDescriptor>
+            `;
+    const polygons = new VectorLayer({
+      properties: {
+        title: 'Polygons',
+        synchronize: false,
+        cluster: false,
+        inlineLegend: true,
+        popUp: {
+          attributes: ['name'],
+          widgets: ['layer-name', 'clear-layer'],
+        },
+        editor: {
+          editable: true,
+          defaultAttributes: {
+            name: 'New polygon',
+            description: 'none',
+          },
+        },
+        sld: polygonSld,
+        path: 'User generated',
+      },
+      source: new VectorSource({
+        features: new GeoJSON().readFeatures(geojsonObject),
+      }),
+    });
     const opticalMap = new Tile({
       source: new XYZ({
         attributions:
@@ -115,6 +239,7 @@ export class HslayersAppComponent {
       properties: {
         title: 'Optical satellite basemap',
         from_composition: true,
+        swipeSide: 'right',
         dimensions: {
           time: {
             value: '2020-11-20',
@@ -131,6 +256,7 @@ export class HslayersAppComponent {
       opacity: 1,
     });
     this.HsConfig.update({
+      queryPopupWidgets: ['layer-name', 'feature-info', 'clear-layer'],
       datasources: [
         {
           title: 'Layman',
@@ -139,16 +265,28 @@ export class HslayersAppComponent {
           type: 'layman',
           liferayProtocol: 'https',
         },
+        {
+          title: 'Micka',
+          url: 'https://hub.sieusoil.eu/cat/csw',
+          language: 'eng',
+          type: 'micka',
+        },
       ],
       proxyPrefix: window.location.hostname.includes('localhost')
         ? `${window.location.protocol}//${window.location.hostname}:8085/`
         : '/proxy/',
       panelsEnabled: {
         tripPlanner: true,
+        mapSwipe: true,
+      },
+      mapSwipeOptions: {
+        orientation: 'vertical',
       },
       componentsEnabled: {
-        basemapGallery: true
+        basemapGallery: true,
+        mapSwipe: true,
       },
+      enabledLanguages: 'sk, lv, en',
       assetsPath: 'assets',
       symbolizerIcons: [
         {name: 'bag', url: '/assets/icons/bag1.svg'},
@@ -199,6 +337,8 @@ export class HslayersAppComponent {
         {name: 'warning', url: '/assets/icons/warning.svg'},
         {name: 'wifi', url: '/assets/icons/wifi8.svg'},
       ],
+      status_manager_url: 'http://localhost:8086',
+
       popUpDisplay: 'hover',
       default_layers: [
         new Tile({
@@ -210,60 +350,7 @@ export class HslayersAppComponent {
             removable: false,
           },
         }),
-        new VectorLayer({
-          properties: {
-            title: 'Points',
-            synchronize: false,
-            cluster: false,
-            inlineLegend: true,
-            popUp: {
-              attributes: ['name', 'population'],
-            },
-            editor: {
-              editable: true,
-              defaultAttributes: {
-                name: 'New bookmark',
-                description: 'none',
-              },
-            },
-            sld: `<?xml version="1.0" encoding="ISO-8859-1"?>
-            <StyledLayerDescriptor version="1.0.0" 
-                xsi:schemaLocation="http://www.opengis.net/sld StyledLayerDescriptor.xsd" 
-                xmlns="http://www.opengis.net/sld" 
-                xmlns:ogc="http://www.opengis.net/ogc" 
-                xmlns:xlink="http://www.w3.org/1999/xlink" 
-                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-              <NamedLayer>
-                <Name>Simple point with stroke</Name>
-                <UserStyle>
-                  <Title>Default</Title>
-                  <FeatureTypeStyle>
-                    <Rule>
-                      <PointSymbolizer>
-                        <Graphic>
-                          <Mark>
-                            <WellKnownName>circle</WellKnownName>
-                            <Fill>
-                              <CssParameter name="fill">#FF0000</CssParameter>
-                            </Fill>
-                            <Stroke>
-                              <CssParameter name="stroke">#000000</CssParameter>
-                              <CssParameter name="stroke-width">2</CssParameter>
-                            </Stroke>
-                          </Mark>
-                          <Size>6</Size>
-                        </Graphic>
-                      </PointSymbolizer>
-                    </Rule>
-                  </FeatureTypeStyle>
-                </UserStyle>
-              </NamedLayer>
-            </StyledLayerDescriptor>
-            `,
-            path: 'User generated',
-          },
-          source: new VectorSource({features}),
-        }),
+
         new VectorLayer({
           properties: {
             title: 'Clusters without SLD',
@@ -298,6 +385,50 @@ export class HslayersAppComponent {
             inlineLegend: true,
             popUp: {
               attributes: ['name'],
+              widgets: ['layer-name', 'clear-layer'],
+            },
+            domFeatureLinks: [
+              {
+                domSelector: '#poly1',
+                feature: 'poly1',
+                event: 'mouseover',
+                actions: ['zoomToExtent'],
+              },
+              {
+                domSelector: '#poly2',
+                feature: 'poly2',
+                event: 'mouseover',
+                actions: ['showPopup'],
+              },
+            ],
+            editor: {
+              editable: true,
+              defaultAttributes: {
+                name: 'New polygon',
+                description: 'none',
+              },
+            },
+            sld: polygonSld,
+            path: 'User generated',
+          },
+          source: new VectorSource({
+            features: new GeoJSON().readFeatures(geojsonObject),
+          }),
+        }),
+        new VectorLayer({
+          properties: {
+            title: 'Polygons with display f-n',
+            synchronize: false,
+            cluster: false,
+            inlineLegend: true,
+            popUp: {
+              attributes: ['name'],
+              widgets: ['layer-name', 'clear-layer'], //Will be ignored due to display function
+              displayFunction: function (feature) {
+                return `<a>${feature.get(
+                  'name'
+                )} with population of ${feature.get('population')}</a>`;
+              },
             },
             editor: {
               editable: true,
@@ -306,34 +437,42 @@ export class HslayersAppComponent {
                 description: 'none',
               },
             },
-            sld: `<?xml version="1.0" encoding="ISO-8859-1"?>
-            <StyledLayerDescriptor version="1.0.0" 
-                xsi:schemaLocation="http://www.opengis.net/sld StyledLayerDescriptor.xsd" 
-                xmlns="http://www.opengis.net/sld" 
-                xmlns:ogc="http://www.opengis.net/ogc" 
-                xmlns:xlink="http://www.w3.org/1999/xlink" 
-                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-              <NamedLayer>
-                <Name>Simple point with stroke</Name>
-                <UserStyle>
-                  <Title>Default</Title>
-                  <FeatureTypeStyle>
-                    <Rule>
-                    <PolygonSymbolizer>
-                    <Fill>
-                      <CssParameter name="fill">#000080</CssParameter>
-                    </Fill>
-                  </PolygonSymbolizer>
-                    </Rule>
-                  </FeatureTypeStyle>
-                </UserStyle>
-              </NamedLayer>
-            </StyledLayerDescriptor>
-            `,
+            sld: polygonSld,
             path: 'User generated',
           },
           source: new VectorSource({
             features: new GeoJSON().readFeatures(geojsonObject),
+          }),
+        }),
+        polygons,
+        points,
+        new Tile({
+          properties: {
+            title: 'Latvian municipalities (parent layer)',
+          },
+          source: new TileWMS({
+            url: 'https://lvmgeoserver.lvm.lv/geoserver/ows',
+            params: {
+              LAYERS: 'public:LV_admin_vienibas',
+              INFO_FORMAT: undefined,
+              FORMAT: 'image/png; mode=8bit',
+            },
+            crossOrigin: 'anonymous',
+          }),
+        }),
+        new Tile({
+          properties: {
+            title: 'Latvian municipalities (1 sub-layer)',
+            sublayers: 'public:Pagasti',
+          },
+          source: new TileWMS({
+            url: 'https://lvmgeoserver.lvm.lv/geoserver/ows',
+            params: {
+              LAYERS: 'public:LV_admin_vienibas',
+              INFO_FORMAT: undefined,
+              FORMAT: 'image/png; mode=8bit',
+            },
+            crossOrigin: 'anonymous',
           }),
         }),
         opticalMap,
@@ -355,6 +494,11 @@ export class HslayersAppComponent {
         layer: opticalMap,
       });
     }, 100);
+
+    this.HsQueryPopupWidgetContainerService.create(
+      PopupWidgetComponent,
+      undefined
+    );
   }
   title = 'hslayers-workspace';
 }

@@ -40,11 +40,11 @@ export class HsCompositionsMickaService {
     const textFilter =
       query && query.title !== undefined && query.title != ''
         ? encodeURIComponent(
-            " AND title like '*" +
+            " AND (title like '*" +
               query.title +
               "*' OR abstract like '*" +
               query.title +
-              "*'"
+              "*')"
           )
         : '';
     const selected = [];
@@ -111,10 +111,12 @@ export class HsCompositionsMickaService {
         record.thumbnail = endpoint.url + '?request=loadthumb&id=' + record.id;
       }
       if (response.extentFeatureCreated) {
-        const mapProjection = this.HsMapService.getCurrentProj();
-        const extentFeature = addExtentFeature(record, mapProjection);
+        const extentFeature = addExtentFeature(
+          record,
+          this.HsMapService.getCurrentProj()
+        );
         if (extentFeature) {
-          record.feature = extentFeature;
+          record.featureId = extentFeature.getId();
           response.extentFeatureCreated(extentFeature);
         }
       }

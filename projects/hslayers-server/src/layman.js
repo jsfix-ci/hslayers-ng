@@ -101,19 +101,20 @@ app.use(`/rest`,
     onProxyRes: authnUtil.handleProxyRes
   }),
 );
+
+const gsProxy = createProxyMiddleware({
+  target: process.env.LAYMAN_BASEURL,
+  changeOrigin: true,
+  selfHandleResponse: true,
+  secure: !process.env.LAYMAN_BASEURL.includes('http://local'),
+  onProxyReq: (proxyReq, req, res) => {
+    authnUtil.addAuthenticationHeaders(proxyReq, req, res);
+  },
+  onProxyRes: authnUtil.handleProxyRes
+});
 // Layman proxy for WFS transactions endpoint
-app.use(`/geoserver`,
-  createProxyMiddleware({
-    target: process.env.LAYMAN_BASEURL,
-    changeOrigin: true,
-    selfHandleResponse: true,
-    secure: !process.env.LAYMAN_BASEURL.includes('http://local'),
-    onProxyReq: (proxyReq, req, res) => {
-      authnUtil.addAuthenticationHeaders(proxyReq, req, res);
-    },
-    onProxyRes: authnUtil.handleProxyRes
-  }),
-);
+app.use(`/geoserver`, gsProxy);
+app.use(`/client/geoserver`, gsProxy);
 
 app.get('/', (req, res) => {
   if (req.session.passport && req.session.passport.user && req.session.passport.user.authenticated) {
@@ -132,8 +133,8 @@ app.get('/logout', (req, res) => {
 });
 
 app.get('/callback', passport.authenticate('oauth2', { failureRedirect: '/error' }), function (req, res) {
-  if (req.session.passport && req.session.passport.user && req.session.passport.user.authenticated) {
-    res.send(`Logged in as ${req.session.passport.user.username}. You can now close this window and return back to the map. <a href="javascript:window.close()">Close</a>
+  if (req.session.passport && req.session.passport.user && (req.session.passport.user.authenticated || req.session.passport.user.ticket)) {
+    res.send(`Logged in as ${req.session.passport.user.screenName || req.session.passport.user.username}. You can now close this window and return back to the map. <a href="javascript:window.close()">Close</a>
     <script>
     function inIframe () {
         try {

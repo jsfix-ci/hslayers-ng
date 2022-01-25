@@ -1,4 +1,4 @@
-import {HsAddDataLayerDescriptor} from '../../components/add-data/catalogue/add-data-layer-descriptor.model';
+import {HsAddDataLayerDescriptor} from '../../components/add-data/catalogue/layer-descriptor.model';
 
 export enum EndpointErrorHandling {
   ignore = 'ignore',
@@ -11,7 +11,7 @@ export interface EndpointErrorHandler {
 }
 
 export interface HsEndpoint {
-  httpCall: any;
+  httpCall?: any;
   type: string;
   title: string;
   url: string;
@@ -21,6 +21,7 @@ export interface HsEndpoint {
   layers?: HsAddDataLayerDescriptor[];
   originalConfiguredUser?;
   user?;
+  authenticated?: boolean;
   code_list_url?: string;
   code_lists?;
   version?: string;

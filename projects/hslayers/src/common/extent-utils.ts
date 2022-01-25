@@ -2,6 +2,7 @@ import Feature from 'ol/Feature';
 import {Geometry} from 'ol/geom';
 import {fromExtent as polygonFromExtent} from 'ol/geom/Polygon';
 import {transform} from 'ol/proj';
+import {generateUuid} from '../components/utils/utils.service';
 
 /**
  * @param record - Record of one dataset from Get Records response
@@ -17,8 +18,22 @@ export function addExtentFeature(
     highlighted: false,
     title: record.title || record.name,
     geometry: null,
+    id: generateUuid(),
   };
-  const mapExtent = mapProjection.getExtent();
+  let mapExtent = mapProjection.getExtent();
+  if (mapExtent === null) {
+    console.warn(
+      'Map projection extent not found - fallback value used. To prevent unexpected results of app functionalities define it by yourself. Eg. mapExtent.setExtent([extent])'
+    );
+    mapProjection.setExtent(
+      transformExtentValue(
+        parseExtent([-180, -90, 180, 90]),
+        mapProjection,
+        true
+      )
+    );
+    mapExtent = mapProjection.getExtent();
+  }
   const recordBBox = record.bbox || record.bounding_box;
   const b = parseExtent(recordBBox || ['180', '180', '180', '180']);
   //Check if height or Width covers the whole screen
@@ -33,7 +48,9 @@ export function addExtentFeature(
     return;
   }
   attributes.geometry = polygonFromExtent(extent);
-  return new Feature(attributes);
+  const extentFeature = new Feature(attributes);
+  extentFeature.setId(extentFeature.get('id'));
+  return extentFeature;
 }
 
 export function transformExtentValue(

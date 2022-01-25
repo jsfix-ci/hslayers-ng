@@ -29,7 +29,8 @@
       },
       "showNext100": "Next 100",
       "showAll": "All",
-      "showingSubset": "Currently showing {{limitShown}} of {{total}} services. Show"
+      "showingSubset": "Currently showing {{limitShown}} of {{total}} services. Show",
+      "theNumberOfRecords": "The number of records will be calculated as close as possible to the selected number"
     },
     "file": "File",
     "saveToDatabase": "Save to database",
@@ -37,7 +38,8 @@
       "selectAll": "Select all Layers",
       "submitLayerName": "Fill in layer name",
       "submitLayerTitle": "Fill in layer title"
-    }
+    },
+    "requestServiceLayers": "Request service layers"
   },
   "ADDLAYERS": {
     "addSelected": "Add selected layers to the map",
@@ -65,13 +67,14 @@
     "queryFormat": "Query format",
     "registerMetadata": "Register metadata",
     "resampleLayer": "Resample layer",
-    "selectAllLayers": "Select All layers",
     "serviceTypeNotMatching": "URL service type does not match selected category",
     "SHP": {
       "loginRequired": "User login is required before layer can be loaded",
       "nameRequired": "'Name' field required to proceed!",
       "shapeFile": "Shape file (shp+dbf+shx)",
-      "SLDStyleFile": "Style file"
+      "SLDStyleFile": "Style file",
+      "maximumNumberOf": "Maximum number of 3 files allowed, but {{length}} selected",
+      "missingOneOrMore": "Missing one or more Shape files. Load files with extensions *.shp, *.shx, *.dbf"
     },
     "srs": "SRS",
     "thisIsRequired": "This is required!",
@@ -107,7 +110,12 @@
     "WMTS": {
       "tileMatrix": "Tile matrix"
     },
-    "unauthorizedAccess": "Unauthorized access. You are not authorized to query data from this service"
+    "unauthorizedAccess": "Unauthorized access. You are not authorized to query data from this service",
+    "geotiffParsingProblem": "Geotiff parsing problem",
+    "filesSelected": "Files selected",
+    "onlyGeoTIFFimages": "Only GeoTIFF images in EPSG:4326 and EPSG:3857 coordinate systems are currently supported. Please make sure you meet these requirements before uploading.",
+    "OlDoesNotRecognizeProjection": "Ol does not recognize requested layers projection",
+    "GPServerServicesAreNotSupported": "GPServer services are not supported!"
   },
   "COMMON": {
     "abstract": "Abstract",
@@ -224,7 +232,14 @@
     "yes": "Yes",
     "zoomTo": "zoom to",
     "into": " into",
-    "uploading": "Uploading data"
+    "uploading": "Uploading data",
+    "edit": "Edit",
+    "context": "Context",
+    "author": "Author",
+    "access": "Access",
+    "enabled": "Enabled",
+    "copyLayer": "Copy layer",
+    "selectRecordCountPerPage": "Select record count per page"
   },
   "COMPOSITIONS": {
     "addByAddress": "Add composition by address",
@@ -259,6 +274,8 @@
       "outOfBounds": "Compostion extent is out of EPSG:4326 boundaries.",
       "toContinue": "Map will not fit the given composition geometry or extent based on the given map size and borders."
     },
+    "errorWhileCreatingLayerFromComposition": "Error while creating layer from composition",
+    "notAbleToParseLayerFromComposition": "It was not possible to parse a layer from composition:",
     "endpointUrlIsNotDefined": "Endpoint url is not defined!",
     "endpointUserIsNotDefined": "Endpoint user is not defined!",
     "errorWhileLoadingCompositionMetadata": "Error while loading composition metadata",
@@ -412,7 +429,24 @@
     "stylingMissing": "Proper styling missing",
     "stylingMissingWarning": "{{type}} geometry can NOT be visualized. Create {{symbolizer}} symbolizer first. You can do so in {{panel}} panel.",
     "unsavedDrawing": "Unsaved drawing",
-    "useModifierToSelectWithBox": "Use {{platformModifierKey}} and drag to select features with box"
+    "useModifierToSelectWithBox": "Use {{platformModifierKey}} and drag to select features with box",
+    "featureEditor": {
+      "featureEditor": "Feature editor",
+      "noIntersection": "No common intersection found for selected features",
+      "onlyOneSplitLine": "Only one splitting line allowed",
+      "selectFeatureToEdit": "Select a polygon feature you want to edit!",
+      "selectedFeature": "Selected feature",
+      "featureCanBeEditedbyOptions": "can be edited by one of the avaliable options",
+      "editOptions": {
+        "split": "Split",
+        "intersection": "Intersection",
+        "union": "Union",
+        "difference": "Difference"
+      },
+      "drawNewFeature": "Draw new feature",
+      "orSelectOne": "or select one (shift + click)",
+      "onlyOneFeatureToEdit": "Only one feature can be edited (split) at the time!"
+    }
   },
   "ERRORMESSAGES": {
     "0": "Http failure response for {{url}}: 0 Unknown Error",
@@ -476,7 +510,8 @@
       "vector (GeoJSON)": "Vector (GeoJSON)",
       "vector (KML)": "Vector (KML)",
       "vector (TopoJSON)": "Vector (TopoJSON)",
-      "zoomToLayer": "Zoom to layer"
+      "zoomToLayer": "Zoom to layer",
+      "copyLayer": "Copy selected layer"
     },
     "layerList": {
       "layerIsQueryable": "This layer is queryable",
@@ -529,6 +564,13 @@
   "LEGEND": {
     "noLegendExists": "No layer with legend exists!"
   },
+  "LAYMAN": {
+    "ERROR": {
+      "2": "Unable to open raster file",
+      "18": "Missing one or more Shape files",
+      "50": "Error when normalizing raster file"
+    }
+  },
   "MAP": {
     "zoomKeyModifier": "Use {{platformModifierKey}} + mouse-wheel to zoom the map",
     "zoomToInitialWindow": "Zoom to initial window"
@@ -561,7 +603,8 @@
     "SAVECOMPOSITION": "Save current map",
     "SEARCH": "Search",
     "SENSORS": "Sensors",
-    "TRIP_PLANNER": "Trip planner"
+    "TRIP_PLANNER": "Trip planner",
+    "MAP_SWIPE": "Map swipe"
   },
   "PERMALINK": {
     "directiveMd": {
@@ -702,7 +745,8 @@
       "PRINT": "Print map",
       "SAVECOMPOSITION": "Save content of map to composition",
       "SEARCH": "Search for location",
-      "TRIP_PLANNER": "Create new trip routes"
+      "TRIP_PLANNER": "Create new trip routes",
+      "MAP_SWIPE": "Map swipe cotrol layer manager"
     }
   },
   "STYLER": {
@@ -802,5 +846,19 @@
     "waypointDrawingHint": "Please click on map to add waypoints",
     "waypointLayer": "Waypoint layer",
     "waypoints": "Waypoints"
+  },
+  "MAP_SWIPE": {
+    "bottom": "Bottom",
+    "horizontalSwipe": "Horizontal swipe",
+    "leftSide": "Left side",
+    "resetSlider": "Reset slider",
+    "rightSide": "Right side",
+    "top": "Top",
+    "dndLayers": "Use drag&drop to move layers between the map sides!",
+    "verticalSwipe": "Vertical swipe",
+    "disableSwipe": "Disable swipe",
+    "enableSwipe": "Enable swipe",
+    "entireMap": "Entire map",
+    "noLayers": "No layers (drag any layer here)"
   }
 }

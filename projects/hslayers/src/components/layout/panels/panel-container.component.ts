@@ -7,7 +7,7 @@ import {
   ViewChild,
 } from '@angular/core';
 
-import {Subject} from 'rxjs';
+import {ReplaySubject, Subject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
 import {HsPanelComponent} from './panel-component.interface';
@@ -23,17 +23,20 @@ export class HsPanelContainerComponent implements OnInit, OnDestroy {
   @ViewChild(HsPanelHostDirective, {static: true})
   panelHost: HsPanelHostDirective;
   /** Service which manages the list of panels */
-  @Input()
-  service: HsPanelContainerServiceInterface;
+  @Input() service: HsPanelContainerServiceInterface;
+  /** Miscellaneous data object to set to each of the panels inside this container.
+   * This is used if undefined value is passed to the create functions data parameter. */
+  @Input() data: any;
+  @Input() panelObserver?: ReplaySubject<HsPanelItem>;
   interval: any;
-  private ngUnsubscribe = new Subject();
+  private ngUnsubscribe = new Subject<void>();
   constructor(private componentFactoryResolver: ComponentFactoryResolver) {}
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();
   }
   ngOnInit(): void {
-    this.service.panelObserver
+    (this.panelObserver ?? this.service.panelObserver)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe((item: HsPanelItem) => {
         this.loadPanel(item);
@@ -47,7 +50,10 @@ export class HsPanelContainerComponent implements OnInit, OnDestroy {
 
   destroyPanel(panel: HsPanelComponent): void {
     const viewContainerRef = this.panelHost.viewContainerRef;
-    viewContainerRef.remove(viewContainerRef.indexOf(panel.viewRef));
+    const index = viewContainerRef.indexOf(panel.viewRef);
+    if (index > -1) {
+      viewContainerRef.remove(index);
+    }
   }
 
   loadPanel(panelItem: HsPanelItem): void {
@@ -56,10 +62,11 @@ export class HsPanelContainerComponent implements OnInit, OnDestroy {
         panelItem.component
       );
     const viewContainerRef = this.panelHost.viewContainerRef;
-    //    viewContainerRef.clear();
-
     const componentRef = viewContainerRef.createComponent(componentFactory);
-    (<HsPanelComponent>componentRef.instance).viewRef = componentRef.hostView;
-    (<HsPanelComponent>componentRef.instance).data = panelItem.data;
+    const componentRefInstance = <HsPanelComponent>componentRef.instance;
+    componentRefInstance.viewRef = componentRef.hostView;
+    if (componentRefInstance.data == undefined) {
+      componentRefInstance.data = panelItem.data || this.data;
+    }
   }
 }

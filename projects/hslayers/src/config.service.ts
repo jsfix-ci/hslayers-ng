@@ -1,12 +1,25 @@
-import {Layer} from 'ol/layer';
-import {Source} from 'ol/source';
-import View from 'ol/View';
 import {Injectable} from '@angular/core';
+
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
+import View from 'ol/View';
+import {Geometry} from 'ol/geom';
+import {Group, Layer} from 'ol/layer';
+import {Source} from 'ol/source';
 import {Subject} from 'rxjs';
+
+import {AddDataFileType} from './components/add-data/file/types/file.type';
+import {AddDataUrlType} from './components/add-data/url/types/url.type';
+import {QueryPopupWidgetsType} from './components/query/widgets/widgets.type';
+import {WidgetItem} from './components/query/widgets/widget-item.type';
 
 export type SymbolizerIcon = {
   name: string;
   url: string;
+};
+
+export type MapSwipeOptions = {
+  orientation?: 'vertical' | 'horizontal';
 };
 
 @Injectable()
@@ -17,7 +30,6 @@ export class HsConfig {
     {name: 'information', url: 'img/icons/information78.svg'},
     {name: 'wifi', url: 'img/icons/wifi8.svg'},
   ];
-  cesiumTime?: any;
   componentsEnabled?: any = {
     guiOverlay: true,
     sidebar: true,
@@ -29,12 +41,13 @@ export class HsConfig {
     defaultViewButton: true,
     mapControls: true,
     basemapGallery: false,
+    mapSwipe: false,
   };
+  clusteringDistance?: number;
   mapInteractionsEnabled?: boolean;
-  allowAddExternalDatasets?: boolean;
   sidebarClosed?: boolean;
   sidebarPosition?: string;
-  box_layers?: Array<any>;
+  box_layers?: Group[];
   senslog?: {
     url: string;
     user_id: number;
@@ -43,25 +56,9 @@ export class HsConfig {
     liteApiPath?: string;
     mapLogApiPath?: string;
   };
-  cesiumDebugShowFramesPerSecond?: boolean;
-  cesiumShadows?: number;
-  cesiumBase?: string;
-  createWorldTerrainOptions?: any;
-  terrain_provider?: any;
-  cesiumTimeline?: boolean;
-  cesiumAnimation?: boolean;
-  creditContainer?: any;
-  cesiumInfoBox?: any;
-  clusteringDistance?: number;
-  imageryProvider?: any;
-  terrainExaggeration?: number;
-  cesiumBingKey?: string;
-  newTerrainProviderOptions?: any;
-  terrain_providers?: any;
-  cesiumAccessToken?: string;
   proxyPrefix?: string;
   defaultDrawLayerPath?: string;
-  default_layers?: Array<Layer<Source>>;
+  default_layers?: Layer<Source>[];
   default_view?: View;
   panelsEnabled?: {
     legend?: boolean;
@@ -85,36 +82,59 @@ export class HsConfig {
     search?: boolean;
     tripPlanner?: boolean;
     addData?: boolean;
+    mapSwipe?: boolean;
   };
   advancedForm?: boolean;
   project_name?: string;
-  hostname?: any;
+  hostname?: {
+    status_manager?: {
+      url: string;
+    };
+    user?: {
+      url: string;
+    };
+    default?: {
+      url: string;
+    };
+  };
+  mapSwipeOptions?: MapSwipeOptions = {};
   status_manager_url?: string;
-  dsPaging?: number;
   permalinkLocation?: {origin: string; pathname: string};
   social_hashtag?: string;
   useProxy?: boolean;
-  shortenUrl?: any;
   layerTooltipDelay?: number;
-  search_provider?: any;
-  geonamesUser?: any;
+  search_provider?: string;
+  geonamesUser?: string;
   searchProvider?: any;
   language?: string;
   enabledLanguages?: string;
-  query?: any;
+  query?: {multi: boolean};
   queryPoint?: string;
-  popUpDisplay?: string;
+  popUpDisplay?: 'none' | 'click' | 'hover';
+  /**
+   * Configures query popup widgets, the order in which they are generated, and visibility
+   */
+  queryPopupWidgets?: QueryPopupWidgetsType[] | string[] = [
+    'layer-name',
+    'feature-info',
+    'clear-layer',
+  ];
+  /**
+   * Allows the user to add custom widgets to query popup
+   */
+  customQueryPopupWidgets?: WidgetItem[];
   preserveLastSketchPoint?: boolean;
   zoomWithModifierKeyOnly?: boolean;
   pureMap?: boolean;
   translationOverrides?: any;
-  layersInFeatureTable?: any;
-  open_lm_after_comp_loaded?: any;
+  layersInFeatureTable?: VectorLayer<VectorSource<Geometry>>[];
+  open_lm_after_comp_loaded?: boolean;
   draggable_windows?: boolean;
-  connectTypes?: any;
+  connectTypes?: AddDataUrlType[];
+  uploadTypes?: AddDataFileType[];
   datasources?: any;
   panelWidths?: any;
-  sidebarToggleable?: any;
+  sidebarToggleable?: boolean;
   sizeMode?: string;
   symbolizerIcons?: SymbolizerIcon[];
   openQueryPanelOnDrawEnd?: boolean;
@@ -125,7 +145,7 @@ export class HsConfig {
    * on page reload, loaded when it starts and deleted afterwards.
    * Otherwise, nothing is stored to localStorage and only default_layers are loaded
    * after page reloads.
-   * @default true
+   * Default: true
    */
   saveMapStateOnReload?: boolean;
   /**
@@ -140,6 +160,7 @@ export class HsConfig {
    *  If set to true, only layers with same path are affected by exclusivity
    */
   pathExclusivity?: boolean = false;
+  ngRouter?: boolean;
   constructor() {
     this.symbolizerIcons = this.defaultSymbolizerIcons.map((val) => {
       val.url = (this.assetsPath ?? '') + val.url;
@@ -147,7 +168,35 @@ export class HsConfig {
     });
   }
 
+  checkDeprecatedCesiumConfig?(newConfig: any) {
+    for (const prop of [
+      'cesiumDebugShowFramesPerSecond',
+      'cesiumShadows',
+      'cesiumBase',
+      'createWorldTerrainOptions',
+      'terrain_provider',
+      'cesiumTimeline',
+      'cesiumAnimation',
+      'creditContainer',
+      'cesiumInfoBox',
+      'imageryProvider',
+      'terrainExaggeration',
+      'cesiumBingKey',
+      'newTerrainProviderOptions',
+      'terrain_providers',
+      'cesiumAccessToken',
+      'cesiumTime',
+    ]) {
+      if (newConfig[prop] != undefined) {
+        console.error(
+          `HsConfig.${prop} has been moved to HsCesiumConfig service or hslayersCesiumConfig.${prop} when using hslayers-cesium-app`
+        );
+      }
+    }
+  }
+
   update?(newConfig: HsConfig): void {
+    this.checkDeprecatedCesiumConfig(newConfig);
     Object.assign(this.componentsEnabled, newConfig.componentsEnabled);
     delete newConfig.componentsEnabled;
     this.symbolizerIcons = [
@@ -172,4 +221,6 @@ export class HsConfig {
       return val;
     });
   }
+
+  shortenUrl?(url: string): any;
 }

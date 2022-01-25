@@ -11,6 +11,7 @@ HSLayers-NG is a library which extends OpenLayers 6 functionality by providing a
 | 4                | 10.x                | 4.x         |
 | 5                | 11.x                | 4.x         |
 | 6                | 12.x                | 4.x         |
+| 7                | 12.x                | 5.x         |
 
 ## Demo
 
@@ -36,7 +37,7 @@ It will install hslayers-ng for the default application specified in your angula
 `ng add hslayers-ng --project myProject`
 
 Add peer dependencies:
-`npm i bootstrap@^4.0.0 ol@^6.0.0 @angular/common @angular/core@ @angular/forms@^12.0.0 @ngx-translate/http-loader@^6.0.0 deepmerge@^4.0.0 dayjs@^1.0.0 @ng-bootstrap/ng-bootstrap@^10.0.0 ol-popup@^4.0.0 proj4@^2.6.0 share-api-polyfill@^1.0.0 @angular/compiler@^12.0.0 @angular/platform-browser@^12.0.0 @angular/platform-browser-dynamic@^12.0.0 @angular/localize@^12.0.0 rxjs@^6.0.0 zone.js@^0.11.3 xml-js@^1.0.0 ngx-cookie-service@^12.0.0 geostyler-style@^4 geostyler-sld-parser@^2 geostyler-openlayers-parser@^2 ngx-color@^6 queue resumablejs geostyler-legend@>=2.0.1 d3  --legacy-peer-deps`
+`npm i bootstrap@^5.0.0 ol@^6.0.0 @angular/cdk@^12 @angular/common@^12 @angular/core@^12 @angular/forms@^12.0.0 @ngx-translate/core@^13 @ngx-translate/http-loader@^6.0.0 deepmerge@^4.0.0 dayjs@^1.0.0 @ng-bootstrap/ng-bootstrap@^10.0.0 ol-popup@^4.0.0 proj4@^2.6.0 share-api-polyfill@^1.0.0 @angular/compiler@^12.0.0 @angular/platform-browser@^12.0.0 @angular/platform-browser-dynamic@^12.0.0 @angular/localize@^12.0.0 rxjs@^6.0.0 zone.js@^0.11.3 xml-js@^1.0.0 ngx-cookie-service@^12.0.0 geostyler-style@^5 geostyler-sld-parser@^3 geostyler-openlayers-parser@^3 geostyler-legend@>=3 ngx-color@^7 queue resumablejs d3 geostyler-qgis-parser@^1 jszip polygon-splitter polygon-clipping`
 
 For using hslayers-ng prebuilt bundle including angular, bootstrap etc. dependencies by loading it through `<script>` tags see: [Hslayers-ng application](https://github.com/hslayers/hslayers-ng/tree/develop/projects/hslayers-app)
 
@@ -63,21 +64,26 @@ Use HsConfig service injected in your component to set applications layers, look
       default_view: new View({
         center: transform([17.474129, 52.574], 'EPSG:4326', 'EPSG:3857'), //Latitude longitude    to Spherical Mercator
         zoom: 4,
-        units: 'm',
       })
     })
 ```        
-### Node.js proxy
-First option is to use Node.js proxy (based on [cors-anywhere](https://github.com/Rob--W/cors-anywhere)) that you can find in `lib/proxy.js` file. Simply run it as any other Node.js script in terminal by 
+### Proxy
+We provide a Node.js based server application [hslayers-server](https://www.npmjs.com/package/hslayers-server) for proxy based on [cors-anywhere](https://github.com/Rob--W/cors-anywhere) that you can install by:
+```
+npm i hslayers-server
+```
+To run:
+`./node_modules/.bin/hslayers-server`
 
-`node proxy.js`
-
-or deploy it as a service for production use. To use this proxy in HSLayers-NG application, you have to set the proxyPrefix parameter in the config 
+To use this proxy in HSLayers-NG application, you have to set the proxyPrefix parameter in the config 
 which specifies the proxy url, eg.
 
 ```
-proxyPrefix: '/proxy/'
+ proxyPrefix: window.location.hostname.includes('localhost')
+        ? `${window.location.protocol}//${window.location.hostname}:8085/`
+        : '/proxy/'
 ```
+This will check if the hslayers-ng based application is running in development mode i.e on http://localhost:4200 and use proxy server address http://localhost:8085 in that case OR in production with the same domain but different directory for porxy application. You can configure the proxy URL to your setup (ports, domains, paths) of course. 
 
 # Library development 
 

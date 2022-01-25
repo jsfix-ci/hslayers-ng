@@ -1,12 +1,9 @@
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 
-import {Feature} from 'ol';
-import {Geometry} from 'ol/geom';
 import {Image as ImageLayer, Layer, Tile} from 'ol/layer';
 import {ImageWMS, Source, TileWMS, WMTS} from 'ol/source';
 
-import TileSource from 'ol/source/Tile';
 import {HsConfig} from '../../config.service';
 import {HsEventBusService} from '../core/event-bus.service';
 import {HsLanguageService} from '../language/language.service';
@@ -34,31 +31,31 @@ import {
 export class HsQueryWmsService {
   infoCounter = 0;
   constructor(
-    public HsQueryBaseService: HsQueryBaseService,
-    public HsMapService: HsMapService,
-    public HsConfig: HsConfig,
-    public HsLayerUtilsService: HsLayerUtilsService,
-    public HsLanguageService: HsLanguageService,
-    public HsUtilsService: HsUtilsService,
-    public HsEventBusService: HsEventBusService,
-    private HttpClient: HttpClient,
-    public HsLogService: HsLogService,
-    public HsQueryWmtsService: HsQueryWmtsService
+    public hsQueryBaseService: HsQueryBaseService,
+    public hsMapService: HsMapService,
+    public hsConfig: HsConfig,
+    public hsLayerUtilsService: HsLayerUtilsService,
+    public hsLanguageService: HsLanguageService,
+    public hsUtilsService: HsUtilsService,
+    public hsEventBusService: HsEventBusService,
+    private httpClient: HttpClient,
+    public hsLogService: HsLogService,
+    public hsQueryWmtsService: HsQueryWmtsService
   ) {
-    this.HsQueryBaseService.getFeatureInfoStarted.subscribe((evt) => {
+    this.hsQueryBaseService.getFeatureInfoStarted.subscribe((evt) => {
       this.infoCounter = 0;
-      this.HsMapService.getLayersArray().forEach((layer: Layer<Source>) => {
+      this.hsMapService.getLayersArray().forEach((layer: Layer<Source>) => {
         if (getBase(layer) == true || layer.get('queryable') == false) {
           return;
         }
         if (getQueryFilter(layer) != undefined) {
           const filter = getQueryFilter(layer);
-          if (!filter(HsMapService.map, layer, evt.pixel)) {
+          if (!filter(hsMapService.map, layer, evt.pixel)) {
             return;
           }
         }
         this.queryWmsLayer(
-          this.HsUtilsService.instOf(layer, Tile)
+          this.hsUtilsService.instOf(layer, Tile)
             ? (layer as Layer<TileWMS>)
             : (layer as Layer<ImageWMS>),
           evt.coordinate
@@ -68,39 +65,40 @@ export class HsQueryWmsService {
   }
 
   /**
-   * @param updated
-   * @param customInfoTemplate
-   * @param Base
-   * @param group
+   * @param updated -
+   * @param customInfoTemplate -
+   * @param group -
    */
-  updateFeatureList(updated, customInfoTemplate, Base, group): void {
+  updateFeatureList(updated, customInfoTemplate, group): void {
     if (updated) {
       if (customInfoTemplate) {
-        Base.setData(group, 'customFeatures');
-        Base.dataCleared = false;
+        this.hsQueryBaseService.setData(group, 'customFeatures');
+        this.hsQueryBaseService.dataCleared = false;
       } else {
-        Base.setData(group, 'features');
+        this.hsQueryBaseService.setData(group, 'features');
       }
     }
   }
 
-  async request(url, infoFormat, coordinate, layer): Promise<void> {
-    const req_url = this.HsUtilsService.proxify(url, true);
-    const reqHash = this.HsQueryBaseService.currentQuery;
+  async request(url, infoFormat, coordinate: number[], layer): Promise<void> {
+    const req_url = this.hsUtilsService.proxify(url, true);
+    const reqHash = this.hsQueryBaseService.currentQuery;
     try {
       const headers = new Headers({'Content-Type': 'text'});
       headers.set('Accept', 'text');
-      const response = await this.HttpClient.get(req_url, {
-        headers: new HttpHeaders().set('Content-Type', 'text'),
-        responseType: 'text',
-      }).toPromise();
+      const response = await this.httpClient
+        .get(req_url, {
+          headers: new HttpHeaders().set('Content-Type', 'text'),
+          responseType: 'text',
+        })
+        .toPromise();
 
-      if (reqHash != this.HsQueryBaseService.currentQuery) {
+      if (reqHash != this.hsQueryBaseService.currentQuery) {
         return;
       }
-      this.featureInfoReceived(response, infoFormat, url, coordinate, layer);
+      this.featureInfoReceived(response, infoFormat, coordinate, layer);
     } catch (exception) {
-      if (reqHash != this.HsQueryBaseService.currentQuery) {
+      if (reqHash != this.hsQueryBaseService.currentQuery) {
         return;
       }
       this.featureInfoError(coordinate, exception);
@@ -109,30 +107,28 @@ export class HsQueryWmsService {
 
   /**
    * Error callback to decrease infoCounter
-   * @param exception
-   * @param coordinate
+   * @param exception -
+   * @param coordinate -
    */
   featureInfoError(coordinate, exception): void {
     this.infoCounter--;
-    this.HsLogService.warn(exception);
+    this.hsLogService.warn(exception);
     if (this.infoCounter === 0) {
       this.queriesCollected(coordinate);
     }
   }
 
   /**
-   * @description Parse Information from GetFeatureInfo request. If result came in xml format, Infopanel data are updated. If response is in html, popup window is updated and shown.
-   * @param {Object} response Response of GetFeatureInfoRequest
-   * @param {string} infoFormat Format of GetFeatureInfoResponse
-   * @param {string} url Url of request
-   * @param {Ol.coordinate object} coordinate Coordinate of request
-   * @param layer
+   * Parse Information from GetFeatureInfo request. If result came in xml format, Infopanel data are updated. If response is in html, popup window is updated and shown.
+   * @param response - Response of GetFeatureInfoRequest
+   * @param infoFormat - Format of GetFeatureInfoResponse
+   * @param coordinate - Coordinate of request
+   * @param layer -
    */
   featureInfoReceived(
     response,
     infoFormat: string,
-    url,
-    coordinate,
+    coordinate: number[],
     layer
   ): void {
     /* Maybe this will work in future OL versions
@@ -148,7 +144,7 @@ export class HsQueryWmsService {
 
       if (
         infoFormat.includes('gml') ||
-        this.HsUtilsService.instOf(layer.getSource(), WMTS)
+        this.hsUtilsService.instOf(layer.getSource(), WMTS)
       ) {
         this.parseGmlResponse(doc, layer, customInfoTemplate);
       } else if (
@@ -163,10 +159,10 @@ export class HsQueryWmsService {
             customInfoTemplate: customInfoTemplate,
           };
           if (customInfoTemplate) {
-            this.HsQueryBaseService.setData(group, 'customFeatures');
-            this.HsQueryBaseService.dataCleared = false;
+            this.hsQueryBaseService.setData(group, 'customFeatures');
+            this.hsQueryBaseService.dataCleared = false;
           } else {
-            this.HsQueryBaseService.setData(group, 'features');
+            this.hsQueryBaseService.setData(group, 'features');
           }
         } else {
           return;
@@ -178,18 +174,18 @@ export class HsQueryWmsService {
         return;
       }
       if (getFeatureInfoTarget(layer) == 'info-panel') {
-        this.HsQueryBaseService.pushFeatureInfoHtml(response);
+        this.hsQueryBaseService.pushFeatureInfoHtml(response);
       } else {
-        this.HsQueryBaseService.fillIframeAndResize(response, true);
+        this.hsQueryBaseService.fillIframeAndResize(response, true);
         if (getPopupClass(layer) != undefined) {
-          this.HsQueryBaseService.popupClassname =
+          this.hsQueryBaseService.popupClassname =
             'ol-popup ' + getPopupClass(layer);
         }
       }
     }
     if (infoFormat.includes('json')) {
       const resJSON = JSON.parse(response);
-      this.HsQueryBaseService.setData(resJSON.features, 'customFeatures');
+      this.hsQueryBaseService.setData(resJSON.features, 'customFeatures');
       console.log('jsonquery');
     }
     this.infoCounter--;
@@ -223,17 +219,12 @@ export class HsQueryWmsService {
           attributes: attributes,
           customInfoTemplate: customInfoTemplate,
         };
-        this.updateFeatureList(
-          updated,
-          customInfoTemplate,
-          this.HsQueryBaseService,
-          group
-        );
+        this.updateFeatureList(updated, customInfoTemplate, group);
       }
       const featureNode = feature.firstChild;
       const group = {
         name: 'Feature',
-        layer: this.HsLayerUtilsService.getLayerName(layer),
+        layer: this.hsLayerUtilsService.getLayerName(layer),
         attributes: [],
       };
       for (const attribute in featureNode.children) {
@@ -245,12 +236,7 @@ export class HsQueryWmsService {
           updated = true;
         }
       }
-      this.updateFeatureList(
-        updated,
-        customInfoTemplate,
-        this.HsQueryBaseService,
-        group
-      );
+      this.updateFeatureList(updated, customInfoTemplate, group);
     }
     doc.querySelectorAll('msGMLOutput').forEach(($this) => {
       for (const layer_i in $this.children) {
@@ -281,12 +267,7 @@ export class HsQueryWmsService {
                 updated = true;
               }
             }
-            this.updateFeatureList(
-              updated,
-              customInfoTemplate,
-              this.HsQueryBaseService,
-              group
-            );
+            this.updateFeatureList(updated, customInfoTemplate, group);
           }
         }
       }
@@ -294,67 +275,67 @@ export class HsQueryWmsService {
   }
 
   /**
-   * @param coordinate
+   * @param coordinate -
    */
-  queriesCollected(coordinate): void {
-    const invisiblePopup: any = this.HsQueryBaseService.getInvisiblePopup();
+  queriesCollected(coordinate: number[]): void {
+    const invisiblePopup: any = this.hsQueryBaseService.getInvisiblePopup();
     if (
-      this.HsQueryBaseService.data.features.length > 0 ||
+      this.hsQueryBaseService.data.features.length > 0 ||
       invisiblePopup.contentDocument.body.innerHTML.length > 30
     ) {
-      this.HsQueryBaseService.getFeatureInfoCollected.next(coordinate);
+      this.hsQueryBaseService.getFeatureInfoCollected.next(coordinate);
     }
   }
 
   /**
-   * @description Get FeatureInfo from WMS queryable layer (only if format of response is XML/GML/HTML). Use hs.query.service_getwmsfeatureinfo service for request and parsing response.
-   * @param {Ol.Layer} layer Layer to Query
-   * @param {Ol.coordinate} coordinate
+   * Get FeatureInfo from WMS queryable layer (only if format of response is XML/GML/HTML). Use hs.query.service_getwmsfeatureinfo service for request and parsing response.
+   * @param layer - Layer to Query
+   * @param coordinate -
    */
-  queryWmsLayer(layer: Layer<ImageWMS | TileWMS>, coordinate) {
+  queryWmsLayer(layer: Layer<ImageWMS | TileWMS>, coordinate: number[]) {
     if (this.isLayerWmsQueryable(layer)) {
-      if (this.HsUtilsService.instOf(layer.getSource(), WMTS)) {
-        this.HsQueryWmtsService.parseRequestUrl(layer, coordinate).then(
-          (res) => {
+      if (this.hsUtilsService.instOf(layer.getSource(), WMTS)) {
+        this.hsQueryWmtsService
+          .parseRequestUrl(layer, coordinate)
+          .then((res) => {
             console.log(res);
             this.infoCounter++;
             this.request(res.url, res.format, coordinate, layer);
-          }
-        );
+          });
         return;
       }
 
       const source = layer.getSource();
-      const map = this.HsMapService.map;
+      const map = this.hsMapService.map;
       const viewResolution = map.getView().getResolution();
       let url = source.getFeatureInfoUrl(
         coordinate,
         viewResolution,
         source.getProjection()
           ? source.getProjection()
-          : this.HsMapService.getCurrentProj(),
+          : this.hsMapService.getCurrentProj(),
         {
           INFO_FORMAT: source.getParams().INFO_FORMAT,
         }
       );
       if (
         getFeatureInfoLang(layer) &&
-        getFeatureInfoLang(layer)[this.HsLanguageService.language]
+        getFeatureInfoLang(layer)[this.hsLanguageService.language]
       ) {
-        if (this.HsUtilsService.instOf(source, TileWMS)) {
+        if (this.hsUtilsService.instOf(source, TileWMS)) {
           url = url.replace(
             (source as TileWMS).getUrls()[0],
-            getFeatureInfoLang(layer)[this.HsLanguageService.language]
+            getFeatureInfoLang(layer)[this.hsLanguageService.language]
           );
         } else {
           url = url.replace(
             (source as ImageWMS).getUrl(),
-            getFeatureInfoLang(layer)[this.HsLanguageService.language]
+            getFeatureInfoLang(layer)[this.hsLanguageService.language]
           );
         }
       }
       if (url) {
-        this.HsLogService.log(url);
+        this.hsLogService.log(url);
 
         if (
           source.getParams().INFO_FORMAT.includes('xml') ||
@@ -370,29 +351,29 @@ export class HsQueryWmsService {
   }
 
   /**
-   * @param layer
+   * @param layer - Selected layer
    */
   isLayerWmsQueryable(layer): boolean {
     if (!layer.getVisible()) {
       return false;
     }
-    if (this.HsUtilsService.instOf(layer, Tile)) {
+    if (this.hsUtilsService.instOf(layer, Tile)) {
       if (
-        this.HsUtilsService.instOf(layer.getSource(), TileWMS) &&
+        this.hsUtilsService.instOf(layer.getSource(), TileWMS) &&
         layer.getSource().getParams().INFO_FORMAT
       ) {
         return true;
       }
       if (
-        this.HsUtilsService.instOf(layer.getSource(), WMTS) &&
+        this.hsUtilsService.instOf(layer.getSource(), WMTS) &&
         getInfoFormat(layer)
       ) {
         return true;
       }
     }
     if (
-      this.HsUtilsService.instOf(layer, ImageLayer) &&
-      this.HsUtilsService.instOf(layer.getSource(), ImageWMS) &&
+      this.hsUtilsService.instOf(layer, ImageLayer) &&
+      this.hsUtilsService.instOf(layer.getSource(), ImageWMS) &&
       layer.getSource().getParams().INFO_FORMAT
     ) {
       return true;

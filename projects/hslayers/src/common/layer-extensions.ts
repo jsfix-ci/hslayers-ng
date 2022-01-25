@@ -1,21 +1,19 @@
 import Feature from 'ol/Feature';
 import {Group, Layer} from 'ol/layer';
-import {Style} from 'ol/style';
 
+import {DOMFeatureLink} from './dom-feature-link.type';
 import {Geometry} from 'ol/geom';
 import {HsLaymanLayerDescriptor} from '../components/save-map/layman-layer-descriptor.interface';
 import {Source} from 'ol/source';
 import {accessRightsModel} from '../components/add-data/common/access-rights.model';
 
-const TITLE = 'title';
-const NAME = 'name';
 const ABSTRACT = 'abstract';
 const ACCESS_RIGHTS = 'access_rights';
 const ACTIVE = 'active';
 const ATTRIBUTION = 'attribution';
 const AUTO_LEGEND = 'autoLegend';
-const CAPABILITIES = 'capabilities';
 const BASE = 'base';
+const CAPABILITIES = 'capabilities';
 const CLUSTER = 'cluster';
 const CUSTOM_INFO_TEMPLATE = 'customInfoTemplate';
 const DEFINITION = 'definition';
@@ -27,30 +25,34 @@ const EXCLUSIVE = 'exclusive';
 const FEATURE_INFO_LANG = 'featureInfoLang';
 const FROM_COMPOSITION = 'fromComposition';
 const GET_FEATURE_INFO_TARGET = 'getFeatureInfoTarget';
-const HS_ORIGINAL_STYLE = 'hsOriginalStyle';
 const HS_LAYMAN_SYNCHRONIZING = 'hsLaymanSynchronizing';
+const HS_QML = 'qml';
+const HS_SLD = 'sld';
 const INFO_FORMAT = 'infoFormat';
 const INLINE_LEGEND = 'inlineLegend';
 const LAYMAN_LAYER_DESCRIPTOR = 'laymanLayerDescriptor';
+const LEGENDS = 'legends';
 const MAX_RESOLUTION_DENOMINATOR = 'maxResolutionDenominator';
 const METADATA = 'metadata';
 const MINIMUM_TERRAIN_LEVEL = 'minimumTerrainLevel';
+const NAME = 'name';
 const ON_FEATURE_SELECTED = 'onFeatureSelected';
 const PATH = 'path';
 const POPUP = 'popUp';
 const POPUP_CLASS = 'popupClass';
-const QUERYABLE = 'queryable';
 const QUERY_CAPABILITIES = 'queryCapabilities';
 const QUERY_FILTER = 'queryFilter';
+const QUERYABLE = 'queryable';
 const REMOVABLE = 'removable';
 const SHOW_IN_LAYER_MANAGER = 'showInLayerManager';
-const HS_SLD = 'sld';
+const SUB_LAYERS = ['subLayers', 'sublayers'];
+const SWIPE_SIDE = 'swipeSide';
 const THUMBNAIL = 'thumbnail';
+const TITLE = 'title';
 const VIRTUAL_ATTRIBUTES = 'virtualAttributes';
-const LEGENDS = 'legends';
-const SUB_LAYERS = 'sublayers';
-const WORKSPACE = 'workspace';
 const WFS_URL = 'wfsUrl';
+const WORKSPACE = 'workspace';
+export const DOM_FEATURE_LINKS = 'domFeatureLinks';
 
 export type Attribution = {
   onlineResource?: string;
@@ -84,6 +86,8 @@ export type popUpAttribute = {
 };
 export type popUp = {
   attributes?: Array<popUpAttribute | string>;
+  widgets?: string[];
+  displayFunction?: any;
 };
 
 export function getAccessRights(layer: Layer<Source>): accessRightsModel {
@@ -274,6 +278,17 @@ export function getDimension(layer: Layer<Source>, type: string): Dimension {
   return layer.get(DIMENSIONS) ? layer.get(DIMENSIONS)[type] : undefined;
 }
 
+export function setDomFeatureLinks(
+  layer: Layer<Source>,
+  domFeatureLinks: DOMFeatureLink[]
+): void {
+  layer.set(DOM_FEATURE_LINKS, domFeatureLinks);
+}
+
+export function getDomFeatureLinks(layer: Layer<Source>): DOMFeatureLink[] {
+  return layer.get(DOM_FEATURE_LINKS);
+}
+
 export function setEditor(layer: Layer<Source>, editor: Editor): void {
   layer.set(EDITOR, editor);
 }
@@ -347,6 +362,10 @@ export function getFeatureInfoTarget(layer: Layer<Source>): string {
 
 export function getSld(layer: Layer<Source>): string {
   return layer.get(HS_SLD);
+}
+
+export function getQml(layer: Layer<Source>): string {
+  return layer.get(HS_QML);
 }
 
 export function setSld(layer: Layer<Source>, sld: string): void {
@@ -441,8 +460,8 @@ export type Metadata = {
 
 /**
  * Store metadata which were parsed from layer definition in composition json.
- * @param layer
- * @param metadata
+ * @param layer -
+ * @param metadata -
  */
 export function setMetadata(layer: Layer<Source>, metadata: Metadata): void {
   layer.set(METADATA, metadata);
@@ -549,20 +568,26 @@ export function getShowInLayerManager(layer: Layer<Source>): boolean {
 }
 
 /**
- * Set list of all possible sub-layers for WMS
- * @param layer
- * @param sublayers String of all possible WMS layers sub-layer names separated by comma
+ * Set list of all possible sub-layers for WMS.
+ * This is used to limit the displayed sub-layers on the map.
+ * If sublayers property is set, the sub-layer tree in layer manager is
+ * hidden, otherwise all sub-layers are shown.
+ * @param layer -
+ * @param subLayers - String of all possible WMS layers sub-layer names separated by comma
  */
-export function setSubLayers(layer: Layer<Source>, sublayers: string): void {
-  layer.set(SUB_LAYERS, sublayers);
+export function setSubLayers(layer: Layer<Source>, subLayers: string): void {
+  layer.set(SUB_LAYERS[0], subLayers);
 }
 
 /**
- * Get list of all possible sub-layers for WMS
- * @param layer
+ * Get list of all possible sub-layers for WMS.
+ * This is used to limit the displayed sub-layers on the map.
+ * If sub-layers property is set, the sub-layer tree in layer manager is
+ * hidden, otherwise all sub-layers are shown.
+ * @param layer -
  */
 export function getSubLayers(layer: Layer<Source>): string {
-  return layer.get(SUB_LAYERS);
+  return layer.get(SUB_LAYERS[0]) ?? layer.get(SUB_LAYERS[1]);
 }
 
 export function setThumbnail(layer: Layer<Source>, thumbnail: string): void {
@@ -600,6 +625,17 @@ export function setWfsUrl(layer: Layer<Source>, url: string): void {
   layer.set(WFS_URL, url);
 }
 
+export function getSwipeSide(layer: Layer<Source>): string {
+  return layer.get(SWIPE_SIDE);
+}
+
+export function setSwipeSide(
+  layer: Layer<Source>,
+  side: 'left' | 'right'
+): void {
+  layer.set(SWIPE_SIDE, side);
+}
+
 export const HsLayerExt = {
   getAccessRights,
   setAccessRights,
@@ -625,6 +661,8 @@ export const HsLayerExt = {
   getDefinition,
   setDimensions,
   getDimensions,
+  getDomFeatureLinks,
+  setDomFeatureLinks,
   setEditor,
   getEditor,
   setEnableProxy,
@@ -679,4 +717,6 @@ export const HsLayerExt = {
   getWorkspace,
   getWfsUrl,
   setWfsUrl,
+  getSwipeSide,
+  setSwipeSide,
 };

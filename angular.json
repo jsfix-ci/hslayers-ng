@@ -41,9 +41,7 @@
               }
             ],
             "styles": [
-              "node_modules/ol/ol.css",
-              "projects/hslayers/src/css/hslayers-bootstrap.scss",
-              "projects/hslayers/src/css/whhg-font/css/whhg.css"
+              "projects/hslayers/src/css/hslayers-bootstrap.scss"
             ],
             "scripts": [],
             "customWebpackConfig": {
@@ -149,6 +147,17 @@
             "main": "projects/test-app/src/main.ts",
             "polyfills": "projects/test-app/src/polyfills.ts",
             "tsConfig": "projects/test-app/tsconfig.app.json",
+            "allowedCommonJsDependencies": [
+              "xml-utils/find-tags-by-name",
+              "lru-cache",
+              "pbf",
+              "queue",
+              "xml-js",
+              "geostyler-legend",
+              "ol-popup",
+              "geostyler-openlayers-parser",
+              "geostyler-sld-parser"
+            ],
             "assets": [
               {
                 "glob": "**/*",
@@ -172,9 +181,7 @@
               }
             ],
             "styles": [
-              "node_modules/ol/ol.css",
-              "projects/hslayers/src/css/hslayers-bootstrap.scss",
-              "projects/hslayers/src/css/whhg-font/css/whhg.css"
+              "projects/hslayers/src/css/hslayers-bootstrap.scss"
             ],
             "scripts": [],
             "customWebpackConfig": {
@@ -304,9 +311,7 @@
               }
             ],
             "styles": [
-              "node_modules/ol/ol.css",
-              "projects/hslayers/src/css/hslayers-bootstrap.scss",
-              "projects/hslayers/src/css/whhg-font/css/whhg.css"
+              "projects/hslayers/src/css/hslayers-bootstrap.scss"
             ],
             "scripts": [],
             "customWebpackConfig": {
@@ -384,6 +389,143 @@
         }
       }
     },
+    "test-statistics-app": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "sass"
+        }
+      },
+      "root": "",
+      "sourceRoot": "projects/",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "ngx-build-plus:browser",
+          "options": {
+            "sourceMap": true,
+            "vendorChunk": true,
+            "optimization": false,
+            "outputPath": "dist/test-statistics-app",
+            "index": "projects/test-statistics-app/src/index.html",
+            "main": "projects/test-statistics-app/src/main.ts",
+            "polyfills": "projects/test-statistics-app/src/polyfills.ts",
+            "tsConfig": "projects/test-statistics-app/tsconfig.app.json",
+            "statsJson": true,
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/hslayers/src/assets",
+                "output": "./assets"
+              },
+              {
+                "glob": "**/*",
+                "input": "projects/test-statistics-app/src/assets",
+                "output": "./assets"
+              },
+              {
+                "glob": "README.md",
+                "input": "projects/test-statistics-app/",
+                "output": "/"
+              },
+              {
+                "glob": "package.json",
+                "input": "projects/test-statistics-app/",
+                "output": "/"
+              }
+            ],
+            "styles": [
+              "projects/hslayers/src/css/hslayers-bootstrap.scss",
+              "projects/test-statistics-app/src/styles.sass"
+            ],
+            "scripts": [],
+            "extraWebpackConfig": "projects/test-statistics-app/webpack.config.js"
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "sourceMap": true,
+              "namedChunks": false,
+              "extractLicenses": true,
+              "vendorChunk": true,
+              "buildOptimizer": true,
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "6mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "200kb",
+                  "maximumError": "300kb"
+                }
+              ]
+            },
+            "development": {
+							"buildOptimizer": false,
+							"optimization": false,
+							"vendorChunk": true,
+							"extractLicenses": false,
+							"sourceMap": true,
+							"namedChunks": true
+						}
+          }
+        },
+        "serve": {
+          "builder": "ngx-build-plus:dev-server",
+          "options": {
+            "port": 5100,
+            "browserTarget": "test-statistics-app:build",
+            "extraWebpackConfig": "projects/test-statistics-app/webpack.config.js"
+          },
+          "configurations": {
+            "production": {
+              "browserTarget": "test-statistics-app:build:production"
+            },
+            "development": {
+							"browserTarget": "test-statistics-app:build:development"
+						}
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "test-statistics-app:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/test-statistics-app/test/test.ts",
+            "polyfills": "projects/test-statistics-app/src/polyfills.ts",
+            "tsConfig": "projects/test-statistics-app/tsconfig.spec.json",
+            "karmaConfig": "projects/test-statistics-app/karma.conf.js",
+            "assets": [
+              "projects/test-statistics-app/src/favicon.ico",
+              "projects/test-statistics-app/src/assets"
+            ],
+            "styles": [
+              "projects/test-statistics-app/src/styles.sass"
+            ],
+            "scripts": []
+          }
+        },
+        "e2e": {
+          "builder": "@angular-devkit/build-angular:protractor",
+          "options": {
+            "protractorConfig": "e2e/protractor.conf.js",
+            "devServerTarget": "test-statistics-app:serve"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "test-statistics-app:serve:production"
+            }
+          }
+        }
+      }
+    },
     "hslayers-cesium-app": {
       "projectType": "application",
       "schematics": {
@@ -442,10 +584,8 @@
               }
             ],
             "styles": [
-              "node_modules/ol/ol.css",
               "node_modules/cesium/Build/Cesium/Widgets/widgets.css",
-              "projects/hslayers/src/css/hslayers-bootstrap.scss",
-              "projects/hslayers/src/css/whhg-font/css/whhg.css"
+              "projects/hslayers/src/css/hslayers-bootstrap.scss"
             ],
             "scripts": [],
             "customWebpackConfig": {
@@ -524,6 +664,163 @@
           "configurations": {
             "production": {
               "devServerTarget": "hslayers-cesium-app:serve:production"
+            }
+          }
+        }
+      }
+    },
+    "cesium-test-app": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "sass"
+        }
+      },
+      "root": "",
+      "sourceRoot": "projects/",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-builders/custom-webpack:browser",
+          "options": {
+            "sourceMap": true,
+            "vendorChunk": true,
+            "optimization": false,
+            "outputPath": "dist/cesium-test-app",
+            "index": "projects/cesium-test-app/src/index.html",
+            "main": "projects/cesium-test-app/src/main.ts",
+            "polyfills": "projects/cesium-test-app/src/polyfills.ts",
+            "tsConfig": "projects/cesium-test-app/tsconfig.app.json",
+            "aot": true,
+            "allowedCommonJsDependencies": [
+              "xml-utils/find-tags-by-name",
+              "lru-cache",
+              "pbf",
+              "queue",
+              "xml-js",
+              "geostyler-legend",
+              "ol-popup",
+              "geostyler-openlayers-parser",
+              "geostyler-sld-parser"
+            ],
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/cesium-test-app/src/assets",
+                "output": "./assets"
+              },
+              {
+                "glob": "**/*",
+                "input": "projects/hslayers/src/assets",
+                "output": "./assets"
+              },
+              {
+                "glob": "**/*",
+                "input": "./node_modules/cesium/Source/Assets",
+                "output": "./assets/cesium/Assets"
+              },
+              {
+                "glob": "**/*",
+                "input": "./node_modules/cesium/Source/Widgets",
+                "output": "./assets/cesium/Widgets"
+              },
+              {
+                "glob": "**/*",
+                "input": "./node_modules/cesium/Source/Workers",
+                "output": "./assets/cesium/Workers"
+              },
+              {
+                "glob": "README.md",
+                "input": "projects/cesium-test-app/",
+                "output": "/"
+              },
+              {
+                "glob": "package.json",
+                "input": "projects/cesium-test-app/",
+                "output": "/"
+              }
+            ],
+            "styles": [
+              "node_modules/cesium/Build/Cesium/Widgets/widgets.css",
+              "projects/hslayers/src/css/hslayers-bootstrap.scss"
+            ],
+            "scripts": [],
+            "customWebpackConfig": {
+              "path": "projects/cesium-test-app/custom-webpack.config.js"
+            }
+          },
+          "configurations": {
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "projects/cesium-test-app/src/environments/environment.ts",
+                  "with": "projects/cesium-test-app/src/environments/environment.prod.ts"
+                }
+              ],
+              "optimization": true,
+              "sourceMap": true,
+              "namedChunks": false,
+              "extractLicenses": true,
+              "vendorChunk": true,
+              "buildOptimizer": true,
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "6mb",
+                  "maximumError": "7mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "200kb",
+                  "maximumError": "300kb"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "builder": "@angular-builders/custom-webpack:dev-server",
+          "options": {
+            "browserTarget": "cesium-test-app:build"
+          },
+          "configurations": {
+            "production": {
+              "browserTarget": "cesium-test-app:build:production"
+            }
+          }
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "cesium-test-app:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/cesium-test-app/test/test.ts",
+            "polyfills": "projects/cesium-test-app/src/polyfills.ts",
+            "tsConfig": "projects/cesium-test-app/tsconfig.spec.json",
+            "karmaConfig": "projects/cesium-test-app/karma.conf.js",
+            "assets": [
+              "projects/cesium-test-app/src/favicon.ico",
+              "projects/cesium-test-app/src/assets"
+            ],
+            "styles": [
+              "projects/cesium-test-app/src/styles.sass"
+            ],
+            "scripts": []
+          }
+        },
+        "e2e": {
+          "builder": "@angular-devkit/build-angular:protractor",
+          "options": {
+            "protractorConfig": "e2e/protractor.conf.js",
+            "devServerTarget": "cesium-test-app:serve"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "cesium-test-app:serve:production"
             }
           }
         }

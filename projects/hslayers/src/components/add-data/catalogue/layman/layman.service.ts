@@ -11,7 +11,7 @@ import {
   HsEndpoint,
   isErrorHandlerFunction,
 } from '../../../../common/endpoints/endpoint.interface';
-import {HsAddDataLayerDescriptor} from '../add-data-layer-descriptor.model';
+import {HsAddDataLayerDescriptor} from '../layer-descriptor.model';
 import {HsCommonLaymanService} from '../../../../common/layman/layman.service';
 import {HsLanguageService} from '../../../language/language.service';
 import {HsLogService} from '../../../../common/log/log.service';
@@ -211,7 +211,7 @@ export class HsLaymanBrowserService {
           type: ['WMS', 'WFS'],
           name: layer.name,
           id: layer.uuid,
-          feature: layer.feature,
+          featureId: layer.featureId,
           highlighted: false,
           workspace: layer.workspace,
           editable: layer.access_rights.write.some((user) => {
@@ -224,8 +224,7 @@ export class HsLaymanBrowserService {
             this.hsMapService.getCurrentProj()
           );
           if (extentFeature) {
-            tmp.feature = extentFeature;
-            extentFeature.set('record', tmp);
+            tmp.featureId = extentFeature.getId();
             data.extentFeatureCreated(extentFeature);
           }
         }
@@ -279,23 +278,25 @@ export class HsLaymanBrowserService {
     layer: HsAddDataLayerDescriptor
   ): Promise<any> {
     const lyr = await this.fillLayerMetadata(ds, layer);
-    let sld: string = undefined;
-    if (lyr.sld?.url) {
-      sld = await this.http
-        .get(lyr.sld?.url, {
-          headers: new HttpHeaders().set('Content-Type', 'text'),
-          responseType: 'text',
-        })
-        .toPromise();
-      if (!sld?.includes('StyledLayerDescriptor')) {
-        sld = undefined;
+    let style: string = undefined;
+    if (lyr.style?.url) {
+      style = await this.getStyleFromUrl(lyr.style?.url);
+    }
+    if (lyr.style.type == 'sld') {
+      if (!style?.includes('StyledLayerDescriptor')) {
+        style = undefined;
+      }
+    }
+    if (lyr.style.type == 'qml') {
+      if (!style?.includes('<qgis')) {
+        style = undefined;
       }
     }
     if (lyr.wms.url) {
       return {
         type: lyr.type,
         link: lyr.wms.url,
-        sld,
+        style,
         layer: lyr.name,
         name: lyr.name,
         title: lyr.title,
@@ -312,6 +313,19 @@ export class HsLaymanBrowserService {
         {disableLocalization: true, serviceCalledFrom: 'HsLaymanBrowserService'}
       );
       return false;
+    }
+  }
+
+  async getStyleFromUrl(styleUrl: string): Promise<string> {
+    try {
+      const req = this.http.get(styleUrl, {
+        headers: new HttpHeaders().set('Content-Type', 'text'),
+        responseType: 'text',
+        withCredentials: true,
+      });
+      return await req.toPromise();
+    } catch (ex) {
+      console.error(ex);
     }
   }
 }

@@ -9,21 +9,29 @@ import {
 } from '@ng-bootstrap/ng-bootstrap';
 import {TranslateModule} from '@ngx-translate/core';
 
+import {HsClusterWidgetComponent} from './widgets/cluster-widget.component';
+import {HsCopyLayerDialogComponent} from './dialogs/copy-layer-dialog.component';
 import {HsGetCapabilitiesModule} from '../../common/get-capabilities/get-capabilities.module';
-import {HsLayerEditorComponent} from './layer-editor.component';
+import {HsLayerEditorComponent} from './editor/layer-editor.component';
 import {HsLayerEditorDimensionsComponent} from './dimensions/layer-editor-dimensions.component';
-import {HsLayerEditorSubLayerCheckboxesComponent} from './layer-editor.sub-layer-checkboxes.component';
-import {HsLayerListComponent} from './layermanager-layerlist.component';
+import {HsLayerEditorSubLayerCheckboxesComponent} from './editor/layer-editor.sub-layer-checkboxes.component';
+import {HsLayerEditorWidgetBaseComponent} from './widgets/layer-editor-widget-base.component';
+import {HsLayerListComponent} from './logical-list/layermanager-layerlist.component';
 import {HsLayerManagerComponent} from './layermanager.component';
-import {HsLayerManagerFolderComponent} from './layermanager-folder.component';
-import {HsLayerManagerGalleryComponent} from './layermanager-gallery.component';
-import {HsLayerManagerRemoveAllDialogComponent} from './remove-all-dialog.component';
-import {HsLayerManagerRemoveLayerDialogComponent} from './remove-layer-dialog.component';
+import {HsLayerManagerFolderComponent} from './logical-list/layermanager-folder.component';
+import {HsLayerManagerGalleryComponent} from './gallery/layermanager-gallery.component';
+import {HsLayerManagerRemoveAllDialogComponent} from './dialogs/remove-all-dialog.component';
+import {HsLayerManagerRemoveLayerDialogComponent} from './dialogs/remove-layer-dialog.component';
 import {HsLayerManagerTimeEditorComponent} from './dimensions/layermanager-time-editor.component';
-import {HsLayerPhysicalListComponent} from './layermanager-physical-layerlist.component';
+import {HsLayerPhysicalListComponent} from './physical-list/layermanager-physical-layerlist.component';
 import {HsLegendModule} from '../legend/legend.module';
+import {HsLegendWidgetComponent} from './widgets/legend-widget.component';
+import {HsMetadataWidgetComponent} from './widgets/metadata-widget.component';
+import {HsOpacityWidgetComponent} from './widgets/opacity-widget.component';
 import {HsPanelHelpersModule} from '../layout/panels/panel-helpers.module';
 import {HsQueuesModule} from '../../common/queues/queues.module';
+import {HsScaleWidgetComponent} from './widgets/scale-widget.component';
+import {HsTypeWidgetComponent} from './widgets/type-widget.component';
 import {HsUiExtensionsModule} from '../../common/widgets/ui-extensions.module';
 
 @NgModule({
@@ -37,9 +45,17 @@ import {HsUiExtensionsModule} from '../../common/widgets/ui-extensions.module';
     HsLayerManagerFolderComponent,
     HsLayerListComponent,
     HsLayerManagerRemoveAllDialogComponent,
+    HsCopyLayerDialogComponent,
     HsLayerManagerRemoveLayerDialogComponent,
     HsLayerManagerTimeEditorComponent,
+    HsLayerEditorWidgetBaseComponent,
     HsLayerPhysicalListComponent,
+    HsTypeWidgetComponent,
+    HsMetadataWidgetComponent,
+    HsScaleWidgetComponent,
+    HsClusterWidgetComponent,
+    HsLegendWidgetComponent,
+    HsOpacityWidgetComponent,
   ],
   imports: [
     TranslateModule,
@@ -64,21 +80,16 @@ import {HsUiExtensionsModule} from '../../common/widgets/ui-extensions.module';
     HsLayerManagerFolderComponent,
     HsLayerListComponent,
     HsLayerManagerRemoveAllDialogComponent,
+    HsCopyLayerDialogComponent,
     HsLayerManagerRemoveLayerDialogComponent,
     HsLayerManagerTimeEditorComponent,
     HsLayerPhysicalListComponent,
-  ],
-  entryComponents: [
-    HsLayerManagerComponent,
-    HsLayerEditorDimensionsComponent,
-    HsLayerEditorSubLayerCheckboxesComponent,
-    HsLayerManagerGalleryComponent,
-    HsLayerManagerFolderComponent,
-    HsLayerListComponent,
-    HsLayerManagerRemoveAllDialogComponent,
-    HsLayerManagerRemoveLayerDialogComponent,
-    HsLayerManagerTimeEditorComponent,
-    HsLayerPhysicalListComponent,
+    HsTypeWidgetComponent,
+    HsMetadataWidgetComponent,
+    HsScaleWidgetComponent,
+    HsClusterWidgetComponent,
+    HsLegendWidgetComponent,
+    HsOpacityWidgetComponent,
   ],
 })
 export class HsLayerManagerModule {}

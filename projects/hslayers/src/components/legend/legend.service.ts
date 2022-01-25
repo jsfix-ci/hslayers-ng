@@ -12,7 +12,7 @@ import {OlStyleParser} from 'geostyler-openlayers-parser';
 import {Source, ImageStatic as Static, XYZ} from 'ol/source';
 import {Style} from 'ol/style';
 
-import {HsLayerSelectorService} from '../layermanager/layer-selector.service';
+import {HsLayerSelectorService} from '../layermanager/editor/layer-selector.service';
 import {HsLayerUtilsService} from '../utils/layer-utils.service';
 import {HsLegendDescriptor} from './legend-descriptor.interface';
 import {HsUtilsService} from '../utils/utils.service';
@@ -82,7 +82,9 @@ export class HsLegendService {
       if (!currentLayer.getStyle) {
         return;
       }
-      const parser = new SLDParser();
+      const parser = (SLDParser as any).default
+        ? new (SLDParser as any).default()
+        : new SLDParser();
       const sld = getSld(currentLayer);
       let sldObject;
       if (!sld) {
@@ -103,12 +105,16 @@ export class HsLegendService {
           ],
         };
       } else {
-        sldObject = await parser.readStyle(sld);
+        sldObject = (await parser.readStyle(sld)).output;
       }
-      const legendRenderer = new LegendRenderer({
+      const legendOpts: any = {
         styles: [sldObject],
         size: [300, 200],
-      });
+        hideRect: true,
+      };
+      const legendRenderer = (LegendRenderer as any).default
+        ? new (LegendRenderer as any).default(legendOpts)
+        : new LegendRenderer(legendOpts);
       const el = document.createElement('div');
       await legendRenderer.render(el);
       return el.innerHTML;

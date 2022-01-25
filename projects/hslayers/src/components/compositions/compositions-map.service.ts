@@ -1,4 +1,4 @@
-import {Injectable, NgZone} from '@angular/core';
+import {Injectable} from '@angular/core';
 
 import VectorLayer from 'ol/layer/Vector';
 import {Feature} from 'ol';
@@ -6,16 +6,13 @@ import {Fill, Stroke, Style} from 'ol/style';
 import {Geometry} from 'ol/geom';
 import {Vector} from 'ol/source';
 
-import {
-  getHighlighted,
-  getRecord,
-  setHighlighted,
-} from '../../common/feature-extensions';
-
+import {HsCommonEndpointsService} from '../../common/endpoints/endpoints.service';
 import {HsEventBusService} from '../core/event-bus.service';
+import {HsLayerUtilsService} from '../utils/layer-utils.service';
 import {HsLayoutService} from '../layout/layout.service';
 import {HsMapService} from '../map/map.service';
 import {HsSaveMapService} from '../save-map/save-map.service';
+import {getHighlighted, setHighlighted} from '../../common/feature-extensions';
 
 @Injectable({
   providedIn: 'root',
@@ -44,23 +41,24 @@ export class HsCompositionsMapService {
   });
 
   constructor(
-    public HsEventBusService: HsEventBusService,
-    public HsMapService: HsMapService,
-    public HsLayoutService: HsLayoutService,
-    private HsSaveMapService: HsSaveMapService,
-    private zone: NgZone
+    public hsEventBusService: HsEventBusService,
+    public hsMapService: HsMapService,
+    public hsLayoutService: HsLayoutService,
+    private hsSaveMapService: HsSaveMapService,
+    public hsLayerUtilsService: HsLayerUtilsService,
+    private hsCommonEndpointsService: HsCommonEndpointsService
   ) {
-    this.HsMapService.loaded().then((map) => {
+    this.hsMapService.loaded().then((map) => {
       map.on('pointermove', (e) => this.mapPointerMoved(e));
       map.addLayer(this.extentLayer);
-      this.HsSaveMapService.internalLayers.push(this.extentLayer);
+      this.hsSaveMapService.internalLayers.push(this.extentLayer);
     });
 
-    this.HsEventBusService.mainPanelChanges.subscribe(() => {
+    this.hsEventBusService.mainPanelChanges.subscribe(() => {
       if (this.extentLayer) {
         if (
-          this.HsLayoutService.mainpanel === 'composition_browser' ||
-          this.HsLayoutService.mainpanel === 'composition'
+          this.hsLayoutService.mainpanel === 'composition_browser' ||
+          this.hsLayoutService.mainpanel === 'composition'
         ) {
           this.extentLayer.setVisible(true);
         } else {
@@ -71,38 +69,31 @@ export class HsCompositionsMapService {
   }
 
   /**
-   * @param evt
+   * @param evt -
    */
   mapPointerMoved(evt) {
     const featuresUnderMouse = this.extentLayer
       .getSource()
       .getFeaturesAtCoordinate(evt.coordinate);
-    const highlightedFeatures = this.extentLayer
-      .getSource()
-      .getFeatures()
-      .filter((feature) => getRecord(feature).highlighted);
-
-    const dontHighlight = highlightedFeatures.filter(
-      (feature) => !featuresUnderMouse.includes(feature)
-    );
-    const highlight = featuresUnderMouse.filter(
-      (feature) => !highlightedFeatures.includes(feature)
-    );
-    if (dontHighlight.length > 0 || highlight.length > 0) {
-      this.zone.run(() => {
-        for (const feature of highlight) {
-          getRecord(feature).highlighted = true;
-        }
-        for (const feature of dontHighlight) {
-          getRecord(feature).highlighted = false;
-        }
-      });
+    for (const endpoint of this.hsCommonEndpointsService.endpoints.filter(
+      (ep) => ep.compositions
+    )) {
+      this.hsLayerUtilsService.highlightFeatures(
+        featuresUnderMouse,
+        this.extentLayer,
+        endpoint.compositions
+      );
     }
   }
 
   highlightComposition(composition, state) {
-    if (composition.feature) {
-      setHighlighted(composition.feature, state);
+    if (composition.featureId !== undefined) {
+      const found = this.extentLayer
+        .getSource()
+        .getFeatureById(composition.featureId);
+      if (found) {
+        setHighlighted(found, state);
+      }
     }
   }
 
@@ -119,12 +110,12 @@ export class HsCompositionsMapService {
     this.extentLayer.getSource().addFeatures([extentFeature]);
   }
 
-  getFeatureRecordAndUnhighlight(feature, selector) {
+  getFeatureRecordAndUnhighlight(feature, selector, list: any[]) {
+    const record = list?.find((record) => record.featureId == feature.getId());
     if (
-      this.HsMapService.getLayerForFeature(feature) == this.extentLayer &&
-      getRecord(feature)
+      this.hsMapService.getLayerForFeature(feature) == this.extentLayer &&
+      record
     ) {
-      const record = getRecord(feature);
       setHighlighted(feature, false);
       selector.getFeatures().clear();
       return record;

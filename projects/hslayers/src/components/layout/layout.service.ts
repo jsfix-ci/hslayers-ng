@@ -99,6 +99,7 @@ export class HsLayoutService {
     info: true,
     composition_browser: true,
     toolbar: true,
+    measure: true,
     mobile_settings: false,
     draw: true,
     layermanager: true,
@@ -113,6 +114,7 @@ export class HsLayoutService {
     search: false,
     tripPlanner: false,
     addData: true,
+    mapSwipe: false,
   };
   mapSpaceRef: BehaviorSubject<ViewContainerRef> = new BehaviorSubject(null);
 
@@ -321,6 +323,7 @@ export class HsLayoutService {
       ows: 700,
       composition_browser: 550,
       addData: 700,
+      mapSwipe: 550
     };
     const layoutWidth = this.layoutElement.clientWidth;
     Object.assign(panelWidths, this.HsConfig.panelWidths);

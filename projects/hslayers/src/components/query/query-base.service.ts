@@ -1,16 +1,17 @@
+import {DomSanitizer} from '@angular/platform-browser';
+import {Injectable, NgZone} from '@angular/core';
+
+import CircleStyle from 'ol/style/Circle';
 import VectorLayer from 'ol/layer/Vector';
 import {Circle, Fill, Stroke, Style} from 'ol/style';
-import {DomSanitizer} from '@angular/platform-browser';
 import {Feature, Map} from 'ol';
 import {Geometry, Point} from 'ol/geom';
-import {Injectable, NgZone} from '@angular/core';
 import {Select} from 'ol/interaction';
 import {Subject} from 'rxjs';
 import {Vector} from 'ol/source';
 import {createStringXY, toStringHDMS} from 'ol/coordinate';
 import {transform} from 'ol/proj';
 
-import CircleStyle from 'ol/style/Circle';
 import {HsConfig} from '../../config.service';
 import {HsEventBusService} from '../core/event-bus.service';
 import {HsLanguageService} from '../language/language.service';
@@ -18,27 +19,25 @@ import {HsLayoutService} from '../layout/layout.service';
 import {HsMapService} from '../map/map.service';
 import {HsSaveMapService} from '../save-map/save-map.service';
 import {HsUtilsService} from '../utils/utils.service';
-import {getFeatures} from '../../common/feature-extensions';
-import {getPopUp, getTitle} from '../../common/layer-extensions';
 
 @Injectable({
   providedIn: 'root',
 })
 export class HsQueryBaseService {
   map: Map;
-  data: any = {
+  data = {
     attributes: [],
     features: [],
     featureInfoHtmls: [],
     customFeatures: [],
     coordinates: [],
+    selectedProj: undefined,
   };
+
   queryActive = false;
   popupClassname = '';
   selector = null;
   currentQuery = null;
-  featuresUnderMouse: Feature<Geometry>[] = [];
-  featureLayersUnderMouse = [];
   dataCleared = true;
   queryPoint = new Point([0, 0]);
   queryLayer = new VectorLayer({
@@ -55,9 +54,9 @@ export class HsQueryBaseService {
         }),
       ],
     }),
-    style: (feature) => this.pointClickedStyle(feature),
+    style: () => this.pointClickedStyle(),
   });
-
+  featureLayersUnderMouse = [];
   nonQueryablePanels = [
     'measure',
     'composition_browser',
@@ -67,38 +66,37 @@ export class HsQueryBaseService {
     'tripPlanner',
   ];
   last_coordinate_clicked: any;
-  hoverPopup: any;
   getFeatureInfoStarted: Subject<any> = new Subject();
-  getFeatureInfoCollected: Subject<any> = new Subject();
+  getFeatureInfoCollected: Subject<number[] | void> = new Subject();
   queryStatusChanges: Subject<boolean> = new Subject();
   vectorSelectorCreated: Subject<Select> = new Subject();
 
   constructor(
-    public HsMapService: HsMapService,
-    public HsConfig: HsConfig,
-    public HsLayoutService: HsLayoutService,
+    public hsMapService: HsMapService,
+    public hsConfig: HsConfig,
+    public hsLayoutService: HsLayoutService,
     public hsLanguageService: HsLanguageService,
-    public HsUtilsService: HsUtilsService,
-    public HsEventBusService: HsEventBusService,
-    private HsSaveMapService: HsSaveMapService,
-    private DomSanitizer: DomSanitizer,
+    public hsUtilsService: HsUtilsService,
+    public hsEventBusService: HsEventBusService,
+    private hsSaveMapService: HsSaveMapService,
+    private domSanitizer: DomSanitizer,
     private zone: NgZone
   ) {
     this.vectorSelectorCreated.subscribe((selector) => {
       this.selector = selector;
     });
 
-    this.HsMapService.loaded().then(() => this.init());
+    this.hsMapService.loaded().then(() => this.init());
   }
   /**
    *
    */
   init(): void {
-    this.map = this.HsMapService.map;
+    this.map = this.hsMapService.map;
     this.activateQueries();
     this.map.on('singleclick', (evt) => {
       this.zone.run(() => {
-        this.HsEventBusService.mapClicked.next(
+        this.hsEventBusService.mapClicked.next(
           Object.assign(evt, {
             coordinates: this.getCoordinate(evt.coordinate),
           })
@@ -118,128 +116,15 @@ export class HsQueryBaseService {
         this.getFeatureInfoStarted.next(evt);
       });
     });
-
-    if (this.HsConfig.popUpDisplay && this.HsConfig.popUpDisplay === 'hover') {
-      this.map.on(
-        'pointermove',
-        this.HsUtilsService.debounce(this.showPopUp, 200, false, this)
-      );
-    } else if (
-      this.HsConfig.popUpDisplay &&
-      this.HsConfig.popUpDisplay === 'click'
-    ) {
-      this.map.on(
-        'singleclick',
-        this.HsUtilsService.debounce(this.showPopUp, 200, false, this)
-      );
-    } /* else none */
   }
 
-  /**
-   * @param e Event, which triggered this function
-   */
-  showPopUp(e): void {
-    // The latter case happens when hovering over the pop-up itself
-    if (e.dragging || e.originalEvent?.target?.tagName != 'CANVAS') {
-      return;
-    }
-    if (!this.queryActive) {
-      return;
-    }
-    const map = e.map;
-    const tmpFeatures = this.getFeaturesUnderMouse(map, e.pixel);
-    if (
-      tmpFeatures.some(
-        (f) => !this.featuresUnderMouse.includes(f as Feature<Geometry>)
-      ) ||
-      this.featuresUnderMouse.some((f) => !tmpFeatures.includes(f))
-    ) {
-      this.zone.run(() => {
-        this.featuresUnderMouse = tmpFeatures as Feature<Geometry>[];
-        if (this.featuresUnderMouse.length) {
-          this.featureLayersUnderMouse = this.featuresUnderMouse.map((f) =>
-            this.HsMapService.getLayerForFeature(f)
-          );
-          this.featureLayersUnderMouse = this.HsUtilsService.removeDuplicates(
-            this.featureLayersUnderMouse,
-            'title'
-          );
-          this.featureLayersUnderMouse = this.featureLayersUnderMouse.map(
-            (l) => {
-              const layer = {
-                title: getTitle(l),
-                layer: l,
-                features: this.featuresUnderMouse.filter(
-                  (f) => this.HsMapService.getLayerForFeature(f) == l
-                ),
-              };
-              return layer;
-            }
-          );
-        } else {
-          this.featuresUnderMouse = [];
-        }
-      });
-    }
-    const pixel = e.pixel;
-    pixel[0] += 2;
-    pixel[1] += 4;
-    this.hoverPopup.setPosition(map.getCoordinateFromPixel(e.pixel));
-  }
-
-  private getFeaturesUnderMouse(map: Map, pixel: any) {
+  getFeaturesUnderMouse(map: Map, pixel: any) {
     return map
       .getFeaturesAtPixel(pixel)
       .filter((feature: Feature<Geometry>) => {
-        const layer = this.HsMapService.getLayerForFeature(feature);
+        const layer = this.hsMapService.getLayerForFeature(feature);
         return layer && layer != this.queryLayer;
       });
-  }
-
-  /**
-   * @param feature
-   */
-  serializeFeatureAttributes(feature: Feature<Geometry>): any[] {
-    const attributesForHover = [];
-    const layer = this.HsMapService.getLayerForFeature(feature);
-    if (layer === undefined) {
-      return;
-    }
-    let attrsConfig = [];
-    if (getPopUp(layer)?.attributes) {
-      //must be an array
-      attrsConfig = getPopUp(layer).attributes;
-    } else {
-      // Layer is not configured to show pop-ups
-      return;
-    }
-    for (const attr of attrsConfig) {
-      let attrName, attrLabel;
-      let attrFunction = (x) => x;
-      if (typeof attr === 'string' || attr instanceof String) {
-        //simple case when only attribute name is provided in the layer config
-        attrName = attr;
-        attrLabel = attr;
-      } else {
-        if (attr.attribute == undefined) {
-          //implies malformed layer config - 'attribute' is obligatory in this case
-          continue;
-        }
-        attrName = attr.attribute;
-        attrLabel = attr.label != undefined ? attr.label : attr.attribute;
-        if (attr.displayFunction) {
-          attrFunction = attr.displayFunction;
-        }
-      }
-      if (feature.get(attrName)) {
-        attributesForHover.push({
-          key: attrLabel,
-          value: feature.get(attrName),
-          displayFunction: attrFunction,
-        });
-      }
-    }
-    return attributesForHover;
   }
 
   setData(data: any, type: string, overwrite?: boolean): void {
@@ -252,7 +137,7 @@ export class HsQueryBaseService {
       } else {
         this.data[type].push(data);
       }
-      this.HsEventBusService.queryDataUpdated.next(this.data);
+      this.hsEventBusService.queryDataUpdated.next(this.data);
     } else if (console) {
       console.log('Query.BaseService.setData type not passed');
     }
@@ -278,14 +163,14 @@ export class HsQueryBaseService {
   }
 
   getInvisiblePopup(): HTMLIFrameElement {
-    if (this.HsUtilsService.runningInBrowser()) {
+    if (this.hsUtilsService.runningInBrowser()) {
       return <HTMLIFrameElement>document.getElementById('invisible_popup');
     }
   }
 
   pushFeatureInfoHtml(html): void {
     this.data.featureInfoHtmls.push(
-      this.DomSanitizer.bypassSecurityTrustHtml(html)
+      this.domSanitizer.bypassSecurityTrustHtml(html)
     );
     this.dataCleared = false;
   }
@@ -300,12 +185,12 @@ export class HsQueryBaseService {
     let tmp_width = iframe.contentWindow.innerWidth;
     if (
       tmp_width >
-      this.HsLayoutService.contentWrapper.querySelector('.hs-ol-map')
+      this.hsLayoutService.contentWrapper.querySelector('.hs-ol-map')
         .clientWidth -
         60
     ) {
       tmp_width =
-        this.HsLayoutService.contentWrapper.querySelector('.hs-ol-map')
+        this.hsLayoutService.contentWrapper.querySelector('.hs-ol-map')
           .clientWidth - 60;
     }
     iframe.style.width = tmp_width + 'px';
@@ -317,13 +202,13 @@ export class HsQueryBaseService {
   }
 
   /**
-   * @param coordinate
+   * @param coordinate -
    */
   getCoordinate(coordinate) {
     this.queryPoint.setCoordinates(coordinate, 'XY');
     const epsg4326Coordinate = transform(
       coordinate,
-      this.HsMapService.getCurrentProj(),
+      this.hsMapService.getCurrentProj(),
       'EPSG:4326'
     );
     const coords = {
@@ -340,7 +225,7 @@ export class HsQueryBaseService {
           value: createStringXY(7)(epsg4326Coordinate),
         },
         {
-          name: this.HsMapService.getCurrentProj().getCode(),
+          name: this.hsMapService.getCurrentProj().getCode(),
           value: createStringXY(7)(coordinate),
         },
       ],
@@ -353,9 +238,9 @@ export class HsQueryBaseService {
       return;
     }
     this.queryActive = true;
-    this.HsMapService.loaded().then((map) => {
+    this.hsMapService.loaded().then((map) => {
       map.addLayer(this.queryLayer);
-      this.HsSaveMapService.internalLayers.push(this.queryLayer);
+      this.hsSaveMapService.internalLayers.push(this.queryLayer);
       this.queryStatusChanges.next(true);
     });
   }
@@ -365,7 +250,7 @@ export class HsQueryBaseService {
       return;
     }
     this.queryActive = false;
-    this.HsMapService.loaded().then((map) => {
+    this.hsMapService.loaded().then((map) => {
       map.removeLayer(this.queryLayer);
       this.queryStatusChanges.next(false);
     });
@@ -373,15 +258,12 @@ export class HsQueryBaseService {
 
   currentPanelQueryable(): boolean {
     return (
-      !this.nonQueryablePanels.includes(this.HsLayoutService.mainpanel) &&
+      !this.nonQueryablePanels.includes(this.hsLayoutService.mainpanel) &&
       !this.nonQueryablePanels.includes('*')
     );
   }
 
-  /**
-   * @param feature
-   */
-  pointClickedStyle(feature): Style {
+  pointClickedStyle(): Style {
     const defaultStyle = new Style({
       image: new Circle({
         fill: new Fill({
@@ -394,11 +276,11 @@ export class HsQueryBaseService {
         radius: 5,
       }),
     });
-    if (this.HsConfig.queryPoint) {
+    if (this.hsConfig.queryPoint) {
       const circle = defaultStyle.getImage() as CircleStyle;
-      if (this.HsConfig.queryPoint == 'hidden') {
+      if (this.hsConfig.queryPoint == 'hidden') {
         circle.setRadius(0);
-      } else if (this.HsConfig.queryPoint == 'notWithin') {
+      } else if (this.hsConfig.queryPoint == 'notWithin') {
         if (this.selector.getFeatures().getLength() > 0) {
           circle.setRadius(0);
         }

@@ -1,5 +1,6 @@
-import {Injectable} from '@angular/core';
+import {Injectable, NgZone} from '@angular/core';
 
+import Feature from 'ol/Feature';
 import FeatureFormat from 'ol/format/Feature';
 import TileLayer from 'ol/layer/Tile';
 import {
@@ -12,14 +13,16 @@ import {
   WMTS,
   XYZ,
 } from 'ol/source';
-import {GeoJSON, KML, TopoJSON} from 'ol/format';
+import {GPX, GeoJSON, KML, TopoJSON} from 'ol/format';
 import {Geometry} from 'ol/geom';
 import {Image as ImageLayer, Layer, Vector as VectorLayer} from 'ol/layer';
 import {isEmpty} from 'ol/extent';
 
 import {HsLanguageService} from '../language/language.service';
 import {HsLayerDescriptor} from '../layermanager/layer-descriptor.interface';
+import {HsMapService} from '../map/map.service';
 import {HsUtilsService} from './utils.service';
+import {METERS_PER_UNIT} from 'ol/proj';
 import {WmsLayer} from '../../common/get-capabilities/wms-get-capabilities-response.interface';
 import {
   getCluster,
@@ -33,7 +36,9 @@ import {
 export class HsLayerUtilsService {
   constructor(
     public HsUtilsService: HsUtilsService,
-    public HsLanguageService: HsLanguageService
+    public HsLanguageService: HsLanguageService,
+    public hsMapService: HsMapService,
+    private zone: NgZone
   ) {}
 
   /**
@@ -120,6 +125,9 @@ export class HsLayerUtilsService {
     const src = layer.getSource();
     if (this.HsUtilsService.instOf(src, ImageWMS)) {
       return (src as ImageWMS).getUrl();
+    }
+    if (this.HsUtilsService.instOf(src, TileArcGISRest)) {
+      return (src as TileArcGISRest).getUrls()[0];
     }
     if (this.HsUtilsService.instOf(src, TileWMS)) {
       return (src as TileWMS).getUrls()[0];
@@ -248,6 +256,18 @@ export class HsLayerUtilsService {
   }
 
   /**
+   * Test if the features in the vector layer come from a GPX source
+   * @param layer - an OL vector layer
+   * @returns true only if the GPX format is explicitly specified in the source. False otherwise.
+   */
+  isLayerGPXSource(layer: Layer<Source>): boolean {
+    if (this.HsUtilsService.instOf(this.getLayerSourceFormat(layer), GPX)) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Test if layer is shown in layer switcher
    * (if not some internal hslayers layer like selected feature layer)
    * @param layer - Layer to check
@@ -284,6 +304,9 @@ export class HsLayerUtilsService {
     }
     if (this.HsUtilsService.instOf(src, TileWMS)) {
       (src as TileWMS).updateParams(params);
+    }
+    if (this.HsUtilsService.instOf(src, TileArcGISRest)) {
+      (src as TileArcGISRest).updateParams(params);
     }
   }
 
@@ -329,6 +352,40 @@ export class HsLayerUtilsService {
     } else {
       const layerName = getTitle(layer) || getName(layer);
       return layerName;
+    }
+  }
+
+  /**
+   * Highlight feature corresponding records inside a list
+   * @param featuresUnder - Features under the cursor
+   * @param layer - Layer to get features from
+   */
+  highlightFeatures(
+    featuresUnder: Feature<Geometry>[],
+    layer: VectorLayer<VectorSource<Geometry>>,
+    list: {featureId?: string; highlighted?: boolean}[]
+  ): void {
+    const highlightedFeatures = list
+      .filter((record) => record.highlighted)
+      .map((record) => layer.getSource().getFeatureById(record.featureId));
+
+    const dontHighlight = highlightedFeatures
+      .filter((feature) => !featuresUnder.includes(feature))
+      .map((f) => f.getId());
+    const highlight = featuresUnder
+      .filter((feature) => !highlightedFeatures.includes(feature))
+      .map((f) => f.getId());
+    if (dontHighlight.length > 0 || highlight.length > 0) {
+      this.zone.run(() => {
+        for (const record of list) {
+          if (highlight.includes(record.featureId)) {
+            record.highlighted = true;
+          }
+          if (dontHighlight.includes(record.featureId)) {
+            record.highlighted = false;
+          }
+        }
+      });
     }
   }
 
@@ -385,5 +442,16 @@ export class HsLayerUtilsService {
    */
   layerInvalid(layer: HsLayerDescriptor): boolean {
     return layer.loadProgress?.error;
+  }
+
+  calculateResolutionFromScale(denominator: number) {
+    if (!denominator) {
+      return denominator;
+    }
+    const view = this.hsMapService.map.getView();
+    const units = view.getProjection().getUnits();
+    const dpi = 25.4 / 0.28;
+    const mpu = METERS_PER_UNIT[units];
+    return denominator / (mpu * 39.37 * dpi);
   }
 }

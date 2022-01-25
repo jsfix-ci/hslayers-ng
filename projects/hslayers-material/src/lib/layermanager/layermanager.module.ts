@@ -13,7 +13,6 @@ import {HsMatLayerManagerComponent} from './layermanager.component';
     HsMatImportsModule,
   ],
   providers: [HsLayerManagerService],
-  entryComponents: [HsMatLayerManagerComponent],
-  exports: [HsMatLayerManagerComponent],
+  exports: [HsMatLayerManagerComponent]
 })
 export class HsMatLayerManagerModule {}

@@ -65,13 +65,14 @@
     "queryFormat": "Formát dotazu",
     "registerMetadata": "Registrovat metadata",
     "resampleLayer": "Převzorkovat vrstvu",
-    "selectAllLayers": "Vybrat všechny vrstvy",
     "serviceTypeNotMatching": "Typ služby URL se neshoduje s vybranou kategorií",
     "SHP": {
       "loginRequired": "Před načtením vrstvy je vyžadováno přihlášení",
       "nameRequired": "Pro pokračování je nutné vyplnit pole 'Název'!",
       "shapeFile": "Soubory Shapefile (shp+dbf+shx)",
-      "SLDStyleFile": "Soubor se styly"
+      "SLDStyleFile": "Soubor se styly",
+      "maximumNumberOf": "Povoleny maximálně 3 soubory, ale bylo vybráno {{length}}",
+      "missingOneOrMore": "Chybí jeden nebo více souborů Shapefile. Nahrajte soubory s příponami *.shp, *.shx, *.dbf"
     },
     "srs": "SRS",
     "thisIsRequired": "Toto je vyžadováno!",
@@ -106,7 +107,11 @@
     },
     "WMTS": {
       "tileMatrix": "Matice dlaždic"
-    }
+    },
+    "filesSelected": "souborů vybráno",
+    "geotiffParsingProblem": "Problém při syntaktické analýze souboru GeoTiff",
+    "onlyGeoTIFFimages": "Pouze obrázky GeoTIFF v souřadnicových systémech EPSG:4326 a EPSG:3857 jsou aktuálně podporovány. Ujistěte se, prosím, že splňují tyto požadavky před načtením.",
+    "unauthorizedAccess": "Neoprávněný přístup. Nemáte oprávnění dotazovat se na data z této služby"
   },
   "COMMON": {
     "abstract": "Abstrakt",
@@ -223,7 +228,13 @@
     "yes": "Ano",
     "zoomTo": "zvětšit na",
     "into": " do",
-    "uploading": "Odesílání dat"
+    "uploading": "Odesílání dat",
+    "edit": "Upravit",
+    "context": "Kontext",
+    "author": "Autor",
+    "access": "Přístup",
+    "enabled": "Povoleno",
+    "copyLayer": "Kopírovat vrstvu"
   },
   "COMPOSITIONS": {
     "addByAddress": "Přidat kompozici z adresy",
@@ -258,6 +269,8 @@
       "outOfBounds": "Rozsah kompozice je mimo rozsah systému EPSG:4326",
       "toContinue": "Na základě dané velikosti mapy nebude mapa zobrazovat geometrii nebo rozsah dané kompozice"
     },
+    "errorWhileCreatingLayerFromComposition": "Chyba při vytváření vrstvy z kompozice",
+    "notAbleToParseLayerFromComposition": "Nebylo možné zpracovat vrstvu z kompozice:",
     "endpointUrlIsNotDefined": "Není definováno URL serveru!",
     "endpointUserIsNotDefined": "Není definován uživatel katalogu",
     "errorWhileLoadingCompositionMetadata": "Chyba při načítání metadat kompozice",
@@ -411,7 +424,24 @@
     "stylingMissing": "Chybí správný styl",
     "stylingMissingWarning": "Geometrii {{type}} NELZE vizualizovat.Nejprve vytvořte symboliku pro {{symbolizer}}. Můžete to udělat v panelu {{panel}}.",
     "unsavedDrawing": "Neuložená kresba",
-    "useModifierToSelectWithBox": "Stiskněte {{platformModifierKey}} a potažením označte oblast výběru"
+    "useModifierToSelectWithBox": "Stiskněte {{platformModifierKey}} a potažením označte oblast výběru",
+    "featureEditor": {
+      "featureEditor": "Editor prvků",
+      "noIntersection": "Pro vybrané prvky nebyl nalezen žádný společný překryv",
+      "onlyOneSplitLine": "Je povolena pouze jedna dělicí linie",
+      "selectFeatureToEdit": "Vyberte polygon, který chcete upravit!",
+      "selectedFeature": "Vybraný prvek",
+      "featureCanBeEditedbyOptions": "lze upravit jednou z dostupných možností",
+      "editOptions": {
+        "split": "Rozdělení",
+        "intersection": "Protnutí",
+        "union": "Sjednocení",
+        "difference": "Rozdíl"
+      },
+      "drawNewFeature": "Nakreslete nový prvek",
+      "orSelectOne": "nebo označne (shift + klik)",
+      "onlyOneFeatureToEdit": "V daný okamžik lze upravit (rozdělit) pouze jeden prvek!"
+    }
   },
   "ERRORMESSAGES": {
     "0": "Chybná odpověď pro {{url}}: 0 Neznámá chyba",
@@ -472,7 +502,8 @@
       "vector (GeoJSON)": "Vektorová (GeoJSON)",
       "vector (KML)": "Vektorová (KML)",
       "vector (TopoJSON)": "Vektorová (TopoJSON)",
-      "zoomToLayer": "Přiblížit na vrstvu"
+      "zoomToLayer": "Přiblížit na vrstvu",
+      "copyLayer": "Kopírovat vybranou vrstvu"
     },
     "layerList": {
       "layerIsQueryable": "Tato vrstva je dotazovatelná",
@@ -560,7 +591,8 @@
     "SAVECOMPOSITION": "Uložit aktuální mapu",
     "SEARCH": "Hledání",
     "SENSORS": "Senzory",
-    "TRIP_PLANNER": "Plánovač tras"
+    "TRIP_PLANNER": "Plánovač tras",
+    "MAP_SWIPE": "Půlená mapa"
   },
   "PERMALINK": {
     "directiveMd": {
@@ -701,7 +733,8 @@
       "PRINT": "Tisk mapy",
       "SAVECOMPOSITION": "Uložit obsah mapy do kompozice",
       "SEARCH": "Vyhledat místo",
-      "TRIP_PLANNER": "Vytvořit novou trasu výletu"
+      "TRIP_PLANNER": "Vytvořit novou trasu výletu",
+      "MAP_SWIPE": "Spravovat vrstvy pro půlenou mapu"
     }
   },
   "STYLER": {
@@ -801,5 +834,26 @@
     "waypointDrawingHint": "Klikněte prosím do mapy pro přidání bodů trasy",
     "waypointLayer": "Vrstva s body trasy",
     "waypoints": "Body trasy"
+  },
+  "LAYMAN": {
+    "ERROR": {
+      "2": "Nelze otevřít rastrový soubor",
+      "18": "Chybí jeden nebo více souborů Shapefile",
+      "50": "Chyba při normalizaci rastrového souboru"
+    }
+  },
+  "MAP_SWIPE": {
+    "horizontalSwipe": "Vodorovný posuvník",
+    "leftSide": "Levá strana",
+    "rightSide": "Pravá strana",
+    "bottom": "Spodní část",
+    "top": "Horní část",
+    "resetSlider": "Vrátit posuvník",
+    "dndLayers": "Přetahujte vrstvy mezi sloupci pro přesun do opačné poloviny mapy",
+    "disableSwipe": "Vypnout půlení",
+    "enableSwipe": "Zapnout půlení",
+    "entireMap": "Celá mapa",
+    "verticalSwipe": "Svislý posuvník",
+    "noLayers": "Žádné vrstvy (přetáhněte vrstvu sem)"
   }
 }

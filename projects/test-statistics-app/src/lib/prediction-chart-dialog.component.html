@@ -1,0 +1,46 @@
+<div class="modal in" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">
+                    {{'STATISTICS.PREDICT' | translate}} {{data.predictedVariable}} {{'STATISTICS.BY' | translate}} {{data.factor.name}}
+                </h4>
+                <button (click)="close()" class="btn-close" data-dismiss="modal"><span aria-hidden="true"></span><span
+                        class="visually-hidden">{{'COMMON.close' | translate}}</span></button>
+            </div>
+            <div class="modal-body" style="max-height:600px; overflow-y:auto">
+                <div class="flex-row w-100 m-auto justify-content-center align-items-center" style="display: flex">
+                    <p class="m-0 p-0 flex-fill text-primary">{{'STATISTICS.LOCATION_FILTER' | translate}}:</p>
+                    <div ngbDropdown placement="bottom-right" style="max-width: 50%">
+                        <button type="button" ngbDropdownToggle class="
+                      btn btn-sm
+                      rounded-0
+                      hs-toolbar-button
+                      d-flex
+                      align-items-center
+                      mw-100
+                    " aria-haspopup="true">
+                            <div class="text-truncate" *ngIf="selectedLocation !== undefined">
+                                {{selectedLocation}}
+                            </div>
+                        </button>
+                        <div ngbDropdownMenu style="transform: translateX(25%); width: 15em">
+                            <div class="d-flex align-items-center w-100 flex-column">
+                                <a class="dropdown-item text-truncate" *ngFor="let val of locationValues"
+                                    data-toggle="tooltip" (click)="selectFilter(val)">{{val}}</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="hs-statistics-prediction" style="min-width: 400px; min-height: 400px"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -13,6 +13,7 @@ export function mockLayerUtilsService() {
     'isLayerGeoJSONSource',
     'isLayerTopoJSONSource',
     'isLayerKMLSource',
+    'isLayerGPXSource',
     'isLayerInManager',
     'getSourceParams',
     'getLayerParams',
@@ -27,5 +28,6 @@ export function mockLayerUtilsService() {
     'layerInvalid',
     'hasNestedLayers',
     'isLayerArcgis',
+    'highlightFeatures',
   ]);
 }

@@ -30,7 +30,7 @@ export class HsShareUrlService {
   urlUntilParams: string;
   param_string: string;
   public statusSaving = false;
-  public browserUrlUpdated: Subject<any> = new Subject();
+  public browserUrlUpdated: Subject<void> = new Subject();
 
   constructor(
     public HsMapService: HsMapService,
@@ -108,7 +108,7 @@ export class HsShareUrlService {
           .map((dic) => `${dic.key}=${encodeURIComponent(dic.value)}`)
           .join('&');
         const baseHref = this.PlatformLocation.getBaseHrefFromDOM();
-        if (locationPath.indexOf(baseHref) == 0) {
+        if (locationPath.indexOf(baseHref) == 0 && this.HsConfig.ngRouter) {
           locationPath = locationPath.replace(baseHref, '');
         }
         this.Location.replaceState(locationPath, paramsSerialized);
@@ -244,6 +244,18 @@ export class HsShareUrlService {
     this.param_string = new_params_string;
     this.urlUntilParams = location.origin + location.pathname;
     this.current_url = this.urlUntilParams + '?' + new_params_string;
+  }
+
+  /**
+   * @param param - Param to get current value and remove
+   * Returns param value and removes custom param when it is called
+   */
+  getParamValAndRemove(param: string): string {
+    const value = this.getParamValue(param);
+    if (this.customParams[param]) {
+      delete this.customParams[param];
+    }
+    return value;
   }
 
   /**

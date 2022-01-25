@@ -4,16 +4,19 @@
 $mobile-layout-breakpoint-value: 767 !default; //will be used in TS files
 $mobile-layout-breakpoint: $mobile-layout-breakpoint-value + "px" !default; //this will be used in hsl styles
 
-@import "~ol/ol";
+@import "ol/ol";
+@import "./whhg-font/css/whhg";
 /*Import parts of the bootstrap outside hsl class to allow :root*/
-@import "~bootstrap/scss/functions";
-@import "~bootstrap/scss/variables";
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
 
 $table-group-separator-color: white;
+$list-group-item-padding-y: 0.75rem ;
+$list-group-item-padding-x: 1.25rem;
 
-@import "~bootstrap/scss/_mixins";
-@import "~bootstrap/scss/_utilities";
-@import "~bootstrap/scss/root";
+@import "bootstrap/scss/_mixins";
+@import "bootstrap/scss/_utilities";
+@import "bootstrap/scss/root";
 
 .hsl,
 .hsl::before,
@@ -24,41 +27,41 @@ $table-group-separator-color: white;
 }
 
 .hsl {
-  @import "~bootstrap/scss/reboot";
-  @import "~bootstrap/scss/type";
-  @import "~bootstrap/scss/images";
-  @import "~bootstrap/scss/containers";
-  @import "~bootstrap/scss/grid";
-  @import "~bootstrap/scss/tables";
-  @import "~bootstrap/scss/_forms";
-  @import "~bootstrap/scss/buttons";
-  @import "~bootstrap/scss/transitions";
-  @import "~bootstrap/scss/dropdown";
-  @import "~bootstrap/scss/button-group";
-  @import "~bootstrap/scss/nav";
-  @import "~bootstrap/scss/navbar";
-  @import "~bootstrap/scss/card";
-  @import "~bootstrap/scss/accordion";
-  @import "~bootstrap/scss/breadcrumb";
-  @import "~bootstrap/scss/pagination";
-  @import "~bootstrap/scss/badge";
-  @import "~bootstrap/scss/alert";
-  @import "~bootstrap/scss/progress";
-  @import "~bootstrap/scss/list-group";
-  @import "~bootstrap/scss/close";
-  @import "~bootstrap/scss/toasts";
-  @import "~bootstrap/scss/modal";
-  @import "~bootstrap/scss/tooltip";
-  @import "~bootstrap/scss/popover";
-  // @import "~bootstrap/scss/carousel";
-  @import "~bootstrap/scss/spinners";
-  // @import "~bootstrap/scss/offcanvas";
+  @import "bootstrap/scss/reboot";
+  @import "bootstrap/scss/type";
+  @import "bootstrap/scss/images";
+  @import "bootstrap/scss/containers";
+  @import "bootstrap/scss/grid";
+  @import "bootstrap/scss/tables";
+  @import "bootstrap/scss/_forms";
+  @import "bootstrap/scss/buttons";
+  @import "bootstrap/scss/transitions";
+  @import "bootstrap/scss/dropdown";
+  @import "bootstrap/scss/button-group";
+  @import "bootstrap/scss/nav";
+  @import "bootstrap/scss/navbar";
+  @import "bootstrap/scss/card";
+  @import "bootstrap/scss/accordion";
+  @import "bootstrap/scss/breadcrumb";
+  @import "bootstrap/scss/pagination";
+  @import "bootstrap/scss/badge";
+  @import "bootstrap/scss/alert";
+  @import "bootstrap/scss/progress";
+  @import "bootstrap/scss/list-group";
+  @import "bootstrap/scss/close";
+  @import "bootstrap/scss/toasts";
+  @import "bootstrap/scss/modal";
+  @import "bootstrap/scss/tooltip";
+  @import "bootstrap/scss/popover";
+  // @import "bootstrap/scss/carousel";
+  @import "bootstrap/scss/spinners";
+  // @import "bootstrap/scss/offcanvas";
 
   // Helpers
-  @import "~bootstrap/scss/_helpers";
+  @import "bootstrap/scss/_helpers";
 
   // Utilities
-  @import "~bootstrap/scss/utilities/api";
+  @import "bootstrap/scss/utilities/api";
 
   //Dropped in b5. suggested to use utilities mb-*. Might refactor later
   .form-group {
@@ -68,11 +71,27 @@ $table-group-separator-color: white;
   .navbar-expand .nav-item {
     align-items: flex-start;
   }
+
   .basemapGallery .dropdown-menu {
     overflow: visible;
   }
   hs-add-data-catalogue .dropdown-menu {
     max-width: revert;
+  }
+  .list-group-item+.list-group-item{
+    border-top-width: 0px;
+  }
+  
+  .hs-url-table {
+    tr td { display: table-cell;}
+
+    .text-light th {
+      color: $light;
+   }
+  }
+
+  .nav-link[class*='btn-']:hover{
+    color: white;
   }
 
   /* app css stylesheet */
@@ -378,7 +397,7 @@ $table-group-separator-color: white;
   }
 
   #stc-layerlist .list-group-item {
-    padding: 0.5rem;
+    padding: 0.25rem;
   }
 
   .hs-stc-footer button {
@@ -393,11 +412,7 @@ $table-group-separator-color: white;
     min-height: 100px;
   }
 
-  .hs-ows-shp-advanced {
-    margin-top: 10px;
-  }
-
-  .hs-ows-vector-advanced {
+  .hs-advanced-options {
     margin-top: 10px;
   }
 
@@ -631,7 +646,7 @@ $table-group-separator-color: white;
     max-height: 20em;
     min-width: 10em;
     max-width: 40em;
-    overflow-y: scroll;
+    overflow-y: auto;
     visibility: visible;
     background: white;
   }
@@ -738,17 +753,28 @@ $table-group-separator-color: white;
     background-color: hsla(0, 0%, 0%, 0.2);
   }
 
+  .hs-popup-layer {
+    line-height: 1.2; border-top: 1px solid rgba(200, 200, 200, 0.5)
+  }
+
+  .hs-hover-popup .icon-remove-circle {color: rgb(73, 80, 87); float: right}
+
+  .hs-hover-popup .card {
+    padding: 5px;
+    overflow-y: auto;
+  }
+
   @import "../components/layout/partials/layout.component.scss";
-  @import "../components//layermanager/partials/layermanager.component.scss";
-  @import "../components//layermanager/partials/layerlist.component.scss";
-  @import "../components/layermanager/partials/gallery.component.scss";
+  @import "../components/layermanager/layermanager.component.scss";
+  @import "../components/layermanager/logical-list/layerlist.component.scss";
+  @import "../components/layermanager/gallery/gallery.component.scss";
   @import "../components/sidebar/partials/sidebar.component.scss";
   @import "../components/geolocation/partials/geolocation.component.scss";
   @import "../components/sidebar/partials/impressum.component.scss";
   @import "../components/search/partials/search.component.scss";
   @import "../components/info/partials/info.component.scss";
   @import "../components/toolbar/partials/toolbar.component.scss";
-  @import "../components//add-data/common/add-data-common.component.scss";
+  @import "../components/add-data/common/common.component.scss";
   /* **OPENLAYERS** */
 
   .ol-attribution {
@@ -878,4 +904,71 @@ $table-group-separator-color: white;
     font-family: "Lucida Grande", Verdana, Geneva, Lucida, Arial, Helvetica,
       sans-serif;
   }
+
+  /**
+ * Taken from https://github.com/Viglino/ol-ext/blob/master/dist/ol-ext.css#L4030
+ */
+
+  .ol-swipe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%);
+  -ms-touch-action: none;
+      touch-action: none;
+}
+
+.ol-swipe:before {
+  content: "";
+  position: absolute;
+  top: -5000px;
+  bottom: -5000px;
+  left: 50%;
+  width: 2px;
+  background: white;
+  z-index:-1;
+  -webkit-transform: translate(-2px, 0);
+          transform: translate(-2px, 0);
+}
+.ol-swipe.horizontal:before {
+  left: -5000px;
+  right: -5000px;
+  top: 50%;
+  bottom: auto;
+  width: auto;
+  height: 2px;
+  background: white;
+}
+
+.ol-swipe,
+.ol-swipe button {
+  cursor: ew-resize;
+}
+.ol-swipe.horizontal,
+.ol-swipe.horizontal button {
+  cursor: ns-resize;
+}
+
+.ol-swipe:after,
+.ol-swipe button:before,
+.ol-swipe button:after {
+  content: "";
+  position: absolute;
+  top: 25%;
+  bottom: 25%;
+  left: 50%;
+  width: 2px;
+  background: rgba(255,255,255,0.8);
+  transform: translate(-1px, 0);
+  -webkit-transform: translate(-1px, 0);
+}
+.ol-swipe button:after {
+  transform: translateX(5px);
+  -webkit-transform: translateX(5px);
+}
+.ol-swipe button:before {
+  transform: translateX(-7px);
+  -webkit-transform: translateX(-7px);
+}
 }

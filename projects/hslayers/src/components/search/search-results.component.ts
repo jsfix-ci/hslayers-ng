@@ -1,34 +1,37 @@
 import {Component, OnDestroy} from '@angular/core';
 
+import Feature from 'ol/Feature';
+import {Geometry} from 'ol/geom';
 import {Subject} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
 import {HsEventBusService} from '../core/event-bus.service';
 import {HsSearchService} from './search.service';
+import {setHighlighted} from '../../common/feature-extensions';
 
 /**
  * Add search results template to page
  */
 @Component({
   selector: 'hs-search-results',
-  templateUrl: './partials/searchresults.html',
+  templateUrl: './partials/search-results.component.html',
 })
 export class HsSearchResultsComponent implements OnDestroy {
   searchResultsVisible: boolean;
   data: any = {};
   fcode_zoom_map: any;
-  private ngUnsubscribe = new Subject();
+  private ngUnsubscribe = new Subject<void>();
   constructor(
-    public HsEventBusService: HsEventBusService,
-    public HsSearchService: HsSearchService
+    private hsEventBusService: HsEventBusService,
+    private hsSearchService: HsSearchService
   ) {
-    this.HsEventBusService.searchResultsReceived
+    this.hsEventBusService.searchResultsReceived
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe((_) => {
         this.searchResultsReceived();
       });
 
-    this.HsEventBusService.clearSearchResults
+    this.hsEventBusService.clearSearchResults
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe((_) => {
         this.clear();
@@ -42,17 +45,38 @@ export class HsSearchResultsComponent implements OnDestroy {
    * Handler for receiving results of search request, sends results to correct parser
    */
   searchResultsReceived(): void {
-    this.data = this.HsSearchService.data;
+    this.data = this.hsSearchService.data;
     this.searchResultsVisible = true;
-    this.HsSearchService.showResultsLayer();
+    this.hsSearchService.showResultsLayer();
   }
   clear(): void {
     this.searchResultsVisible = false;
   }
+
+  /**
+   * @param featureId - feature id
+   * Finds feature from search result layer based on featureId
+   */
+  findFeature(featureId: string): Feature<Geometry> {
+    return this.hsSearchService.searchResultsLayer
+      .getSource()
+      .getFeatureById(featureId);
+  }
+  /**
+   * @param result - Search result record
+   * @param highlight - Feature highlight state
+   * Highlights feature, when hovering search list
+   */
+  highlightResult(result, highlight: boolean): void {
+    const found = this.findFeature(result.featureId);
+    if (found) {
+      setHighlighted(found, highlight);
+    }
+  }
   /**
    * Zoom map to selected result from results list
    *
-   * @param result Selected result
+   * @param result - Selected result
    */
   zoomTo(result: any): void {
     this.fcode_zoom_map = {
@@ -78,6 +102,6 @@ export class HsSearchResultsComponent implements OnDestroy {
     ) {
       zoom_level = this.fcode_zoom_map[result.fcode];
     }
-    this.HsSearchService.selectResult(result, zoom_level);
+    this.hsSearchService.selectResult(result, zoom_level);
   }
 }

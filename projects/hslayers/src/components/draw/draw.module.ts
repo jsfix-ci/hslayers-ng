@@ -5,10 +5,12 @@ import {HsPanelHelpersModule} from '../layout/panels/panel-helpers.module';
 import {HsStylerModule} from '../styles/styles.module';
 import {TranslateModule} from '@ngx-translate/core';
 
+import {DrawEditComponent} from './draw-edit/draw-edit.component';
+import {DrawPanelComponent} from './draw-panel/draw-panel.component';
 import {FormsModule} from '@angular/forms';
 import {HsDrawComponent} from './draw.component';
-import {HsDrawLayerMetadataDialogComponent} from './draw-layer-metadata.component';
-import {HsDrawToolbarComponent} from './draw-toolbar.component';
+import {HsDrawLayerMetadataDialogComponent} from './draw-layer-metadata/draw-layer-metadata.component';
+import {HsDrawToolbarComponent} from './draw-toolbar/draw-toolbar.component';
 import {HsQueryModule} from '../query/query.module';
 import {NgbDropdownModule} from '@ng-bootstrap/ng-bootstrap';
 
@@ -18,6 +20,8 @@ import {NgbDropdownModule} from '@ng-bootstrap/ng-bootstrap';
     HsDrawComponent,
     HsDrawLayerMetadataDialogComponent,
     HsDrawToolbarComponent,
+    DrawPanelComponent,
+    DrawEditComponent,
   ],
   imports: [
     CommonModule,
@@ -34,6 +38,5 @@ import {NgbDropdownModule} from '@ng-bootstrap/ng-bootstrap';
     HsDrawLayerMetadataDialogComponent,
     HsDrawToolbarComponent,
   ],
-  entryComponents: [HsDrawComponent, HsDrawToolbarComponent],
 })
 export class HsDrawModule {}

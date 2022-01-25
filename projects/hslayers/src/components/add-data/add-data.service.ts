@@ -1,10 +1,11 @@
 import {Injectable} from '@angular/core';
-import {Subject} from 'rxjs';
 
 import {Layer} from 'ol/layer';
 import {Source} from 'ol/source';
+import {Subject} from 'rxjs';
 
-import {AddDataUrlType} from './url/types/add-data-url.type';
+import {HsCommonEndpointsService} from '../../common/endpoints/endpoints.service';
+import {HsCommonLaymanService} from '../../common/layman/layman.service';
 import {HsConfig} from '../../config.service';
 import {HsMapService} from '../map/map.service';
 import {HsUtilsService} from '../utils/utils.service';
@@ -16,9 +17,7 @@ export type DatasetType = 'url' | 'catalogue' | 'file' | 'OWS';
   providedIn: 'root',
 })
 export class HsAddDataService {
-  typeSelected: DatasetType;
-  //Holds reference to data.url.component type selected
-  urlType: AddDataUrlType;
+  dsSelected: DatasetType;
   datasetSelected: Subject<{type: DatasetType}> = new Subject();
   /**
    * Cancels any external url data request from datasources panel
@@ -27,7 +26,9 @@ export class HsAddDataService {
   constructor(
     public hsMapService: HsMapService,
     public hsUtilsService: HsUtilsService,
-    public hsConfig: HsConfig
+    public hsConfig: HsConfig,
+    public hsCommonEndpointsService: HsCommonEndpointsService,
+    public hsCommonLaymanService: HsCommonLaymanService
   ) {}
 
   addLayer(layer: Layer<Source>, underLayer?: Layer<Source>): void {
@@ -48,7 +49,7 @@ export class HsAddDataService {
   }
 
   selectType(type: DatasetType): void {
-    this.typeSelected = type;
+    this.dsSelected = type;
     this.datasetSelected.next({type: type});
   }
 }

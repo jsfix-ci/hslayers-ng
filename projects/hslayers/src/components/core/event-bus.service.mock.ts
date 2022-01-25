@@ -10,5 +10,7 @@ export class HsEventBusServiceMock {
   layerSelectedFromUrl: BehaviorSubject<VectorLayer<VectorSource<Geometry>>> =
     new BehaviorSubject(null);
   mainPanelChanges: Subject<any> = new Subject();
+  layerManagerUpdates: Subject<any> = new Subject();
+  mapResets: Subject<any> = new Subject();
   constructor() {}
 }

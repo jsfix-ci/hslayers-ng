@@ -5,11 +5,11 @@ import {HsToolbarPanelBaseComponent} from '../toolbar/toolbar-panel-base.compone
 
 @Component({
   selector: 'hs-search-toolbar',
-  templateUrl: './partials/search-toolbar.html',
+  templateUrl: './partials/search-toolbar.component.html',
 })
 export class HsSearchToolbarComponent extends HsToolbarPanelBaseComponent {
-  constructor(public HsLayoutService: HsLayoutService) {
-    super(HsLayoutService);
+  constructor(public hsLayoutService: HsLayoutService) {
+    super(hsLayoutService);
   }
   name = 'searchToolbar';
 }

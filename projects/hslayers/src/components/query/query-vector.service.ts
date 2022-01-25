@@ -1,12 +1,13 @@
 import {DomSanitizer} from '@angular/platform-browser';
 import {Injectable} from '@angular/core';
-import {Subject} from 'rxjs';
 
 import * as extent from 'ol/extent';
 import Feature from 'ol/Feature';
 import {GeoJSON, WKT} from 'ol/format';
 import {Geometry} from 'ol/geom';
+import {Map} from 'ol';
 import {Select} from 'ol/interaction';
+import {Subject} from 'rxjs';
 import {Vector as VectorSource} from 'ol/source';
 import {click} from 'ol/events/condition';
 import {toLonLat} from 'ol/proj';
@@ -17,6 +18,7 @@ import {HsLayerUtilsService} from '../utils/layer-utils.service';
 import {HsMapService} from '../map/map.service';
 import {HsQueryBaseService} from './query-base.service';
 import {HsUtilsService} from '../utils/utils.service';
+
 import {
   getCustomInfoTemplate,
   getOnFeatureSelected,
@@ -39,17 +41,17 @@ export class HsQueryVectorService {
   featureRemovals: Subject<Feature<Geometry>> = new Subject();
 
   constructor(
-    public HsQueryBaseService: HsQueryBaseService,
-    public HsMapService: HsMapService,
-    public HsConfig: HsConfig,
-    public HsLayerUtilsService: HsLayerUtilsService,
-    public HsUtilsService: HsUtilsService,
-    public HsEventBusService: HsEventBusService,
-    private DomSanitizer: DomSanitizer
+    public hsQueryBaseService: HsQueryBaseService,
+    public hsMapService: HsMapService,
+    public hsConfig: HsConfig,
+    public hsLayerUtilsService: HsLayerUtilsService,
+    public hsUtilsService: HsUtilsService,
+    public hsEventBusService: HsEventBusService,
+    private domSanitizer: DomSanitizer
   ) {
     this.selector = new Select({
       condition: click,
-      multi: this.HsConfig.query?.multi ? this.HsConfig.query.multi : false,
+      multi: this.hsConfig.query?.multi ? this.hsConfig.query.multi : false,
       filter: function (feature, layer) {
         if (layer === null) {
           return;
@@ -61,33 +63,33 @@ export class HsQueryVectorService {
         }
       },
     });
-    this.HsQueryBaseService.vectorSelectorCreated.next(this.selector);
+    this.hsQueryBaseService.vectorSelectorCreated.next(this.selector);
 
-    this.HsEventBusService.olMapLoads.subscribe((map) => {
+    this.hsEventBusService.olMapLoads.subscribe((map) => {
       map.addInteraction(this.selector);
     });
 
-    this.HsQueryBaseService.queryStatusChanges.subscribe(() => {
+    this.hsQueryBaseService.queryStatusChanges.subscribe(() => {
       /*if (Base.queryActive) OlMap.map.addInteraction(this.selector);
             else OlMap.map.removeInteraction(this.selector);*/
     });
 
     this.selector.getFeatures().on('add', (e) => {
-      this.HsEventBusService.vectorQueryFeatureSelection.next({
+      this.hsEventBusService.vectorQueryFeatureSelection.next({
         feature: e.element,
         selector: this.selector,
       });
     });
 
     this.selector.getFeatures().on('remove', (e) => {
-      this.HsEventBusService.vectorQueryFeatureDeselection.next({
+      this.hsEventBusService.vectorQueryFeatureDeselection.next({
         feature: e.element,
         selector: this.selector,
       });
     });
-    this.HsEventBusService.vectorQueryFeatureSelection.subscribe((e) => {
+    this.hsEventBusService.vectorQueryFeatureSelection.subscribe((e) => {
       if (e?.feature) {
-        const layer = this.HsMapService.getLayerForFeature(e.feature);
+        const layer = this.hsMapService.getLayerForFeature(e.feature);
         if (layer && getOnFeatureSelected(layer)) {
           const originalFeature = this.getSelectedFeature(e.feature);
           if (originalFeature) {
@@ -96,13 +98,21 @@ export class HsQueryVectorService {
         }
       }
     });
-    this.HsQueryBaseService.getFeatureInfoStarted.subscribe((e) => {
-      this.HsQueryBaseService.clearData('features');
-      if (!this.HsQueryBaseService.queryActive) {
+    this.hsQueryBaseService.getFeatureInfoStarted.subscribe((e) => {
+      this.hsQueryBaseService.clearData('features');
+      if (!this.hsQueryBaseService.queryActive) {
         return;
       }
       this.createFeatureAttributeList();
     });
+  }
+  getFeaturesUnderMouse(map: Map, pixel: any) {
+    return map
+      .getFeaturesAtPixel(pixel)
+      .filter((feature: Feature<Geometry>) => {
+        const layer = this.hsMapService.getLayerForFeature(feature);
+        return layer && layer != this.hsQueryBaseService.queryLayer;
+      });
   }
   getSelectedFeature(feature: any): any {
     let original = feature;
@@ -112,7 +122,7 @@ export class HsQueryVectorService {
     return original;
   }
   createFeatureAttributeList() {
-    this.HsQueryBaseService.data.attributes.length = 0;
+    this.hsQueryBaseService.data.attributes.length = 0;
     const features = this.selector.getFeatures().getArray();
     let featureDescriptions = [];
     for (const feature of features) {
@@ -120,8 +130,8 @@ export class HsQueryVectorService {
         this.getFeatureAttributes(feature)
       );
     }
-    this.HsQueryBaseService.setData(featureDescriptions, 'features');
-    this.HsQueryBaseService.getFeatureInfoCollected.next();
+    this.hsQueryBaseService.setData(featureDescriptions, 'features');
+    this.hsQueryBaseService.getFeatureInfoCollected.next();
   }
 
   exportData(
@@ -140,22 +150,22 @@ export class HsQueryVectorService {
         fmt = new GeoJSON();
         return fmt.writeFeatures(featureArray, {
           dataProjection: 'EPSG:4326',
-          featureProjection: this.HsMapService.getCurrentProj(),
+          featureProjection: this.hsMapService.getCurrentProj(),
         });
         break;
     }
   }
 
   /**
-   * @param feature
+   * @param feature -
    */
   getFeatureLayerName(feature) {
-    const layer = this.HsMapService.getLayerForFeature(feature);
-    return this.HsLayerUtilsService.getLayerName(layer);
+    const layer = this.hsMapService.getLayerForFeature(feature);
+    return this.hsLayerUtilsService.getLayerName(layer);
   }
 
   /**
-   * @param feature
+   * @param feature - Selected feature from map
    */
   getCentroid(feature) {
     if (feature == undefined) {
@@ -166,15 +176,15 @@ export class HsQueryVectorService {
   }
   /**
    * (PRIVATE) Adding a default stats to query based on feature geom type
-   * @param f Selected feature from map
+   * @param f - Selected feature from map
    */
   addDefaultStats(f) {
     const geom = f.getGeometry();
     const type = geom.getType();
     if (type == 'Polygon') {
-      const area = this.HsUtilsService.formatArea(
+      const area = this.hsUtilsService.formatArea(
         geom,
-        this.HsMapService.getCurrentProj()
+        this.hsMapService.getCurrentProj()
       );
       return [
         {name: `${area.type} in ${area.unit}`, value: area.size},
@@ -182,9 +192,9 @@ export class HsQueryVectorService {
       ];
     }
     if (type == 'LineString') {
-      const length = this.HsUtilsService.formatLength(
+      const length = this.hsUtilsService.formatLength(
         geom,
-        this.HsMapService.getCurrentProj()
+        this.hsMapService.getCurrentProj()
       );
       return [
         {name: `${length.type} in ${length.unit}`, value: length.size},
@@ -197,11 +207,11 @@ export class HsQueryVectorService {
   }
 
   /**
-   * @param {ol/Feature} feature
-   * @returns {ol/source/Source}
+   * @param feature - Selected feature from map
+   * @returns
    */
   olSource(feature) {
-    const layer = this.HsMapService.getLayerForFeature(feature);
+    const layer = this.hsMapService.getLayerForFeature(feature);
     if (layer == undefined) {
       return;
     } else if (layer.getSource().getSource) {
@@ -212,27 +222,27 @@ export class HsQueryVectorService {
   }
 
   /**
-   * @param {ol/Feature} feature
-   * @returns {boolean}
+   * @param feature - Selected feature from map
+   * @returns
    */
   isFeatureRemovable(feature) {
     const source = this.olSource(feature);
     if (source == undefined) {
       return false;
     }
-    const layer = this.HsMapService.getLayerForFeature(feature);
+    const layer = this.hsMapService.getLayerForFeature(feature);
     return (
-      this.HsUtilsService.instOf(source, VectorSource) &&
-      this.HsLayerUtilsService.isLayerEditable(layer)
+      this.hsUtilsService.instOf(source, VectorSource) &&
+      this.hsLayerUtilsService.isLayerEditable(layer)
     );
   }
 
   /**
-   * @param {ol/Feature} feature
+   * @param feature - Selected feature from map
    */
   removeFeature(feature) {
     const source = this.olSource(feature);
-    if (this.HsUtilsService.instOf(source, VectorSource)) {
+    if (this.hsUtilsService.instOf(source, VectorSource)) {
       source.removeFeature(feature);
     }
     this.selector.getFeatures().remove(feature);
@@ -241,7 +251,7 @@ export class HsQueryVectorService {
 
   /**
    * (PRIVATE) Handler for querying vector layers of map. Get information about selected feature.
-   * @param feature Selected feature from map
+   * @param feature - Selected feature from map
    */
   getFeatureAttributes(feature) {
     const attributes = [];
@@ -267,7 +277,7 @@ export class HsQueryVectorService {
         attributes.push(obj);
       }
     });
-    const layer = this.HsMapService.getLayerForFeature(feature);
+    const layer = this.hsMapService.getLayerForFeature(feature);
     if (layer && getCustomInfoTemplate(layer)) {
       customInfoTemplate = getCustomInfoTemplate(layer);
     }
@@ -292,7 +302,7 @@ export class HsQueryVectorService {
         hstemplate,
         feature,
         customInfoTemplate:
-          this.DomSanitizer.bypassSecurityTrustHtml(customInfoTemplate),
+          this.domSanitizer.bypassSecurityTrustHtml(customInfoTemplate),
       };
       tmp.push(featureDescription);
     }
@@ -301,7 +311,7 @@ export class HsQueryVectorService {
 
   sanitizeAttributeValue(value) {
     if ((typeof value).toLowerCase() == 'string') {
-      return this.DomSanitizer.bypassSecurityTrustHtml(value);
+      return this.domSanitizer.bypassSecurityTrustHtml(value);
     } else {
       return;
     }

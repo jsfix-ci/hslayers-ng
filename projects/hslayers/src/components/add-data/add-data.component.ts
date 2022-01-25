@@ -1,10 +1,8 @@
 import {Component} from '@angular/core';
 
-import {
-  AddDataUrlType,
-  servicesSupportedByUrl,
-} from './url/types/add-data-url.type';
+import {AddDataUrlType, servicesSupportedByUrl} from './url/types/url.type';
 import {DatasetType, HsAddDataService} from './add-data.service';
+import {HsAddDataUrlService} from './url/add-data-url.service';
 import {HsEventBusService} from '../core/event-bus.service';
 import {HsLanguageService} from '../language/language.service';
 import {HsLayoutService} from '../layout/layout.service';
@@ -23,6 +21,7 @@ export class HsAddDataComponent extends HsPanelBaseComponent {
     public hsShareUrlService: HsShareUrlService,
     public hsLayoutService: HsLayoutService,
     public hsEventBusService: HsEventBusService,
+    public hsAddDataUrlService: HsAddDataUrlService,
     hsSidebarService: HsSidebarService
   ) {
     super(hsLayoutService);
@@ -37,7 +36,7 @@ export class HsAddDataComponent extends HsPanelBaseComponent {
         this.hsLanguageService.getTranslation('SIDEBAR.descriptions.ADDLAYERS'),
       icon: 'icon-database',
     });
-    this.hsAddDataService.typeSelected = 'catalogue';
+    this.hsAddDataService.dsSelected = 'catalogue';
     servicesSupportedByUrl.forEach((type) =>
       this.connectServiceFromUrlParam(type as AddDataUrlType)
     );
@@ -51,9 +50,9 @@ export class HsAddDataComponent extends HsPanelBaseComponent {
   connectServiceFromUrlParam(type: AddDataUrlType): void {
     const url = this.hsShareUrlService.getParamValue(`hs-${type}-to-connect`);
     if (url) {
-      this.hsLayoutService.setMainPanel('data');
-      this.hsAddDataService.typeSelected = 'url';
-      this.hsAddDataService.urlType = type;
+      this.hsLayoutService.setMainPanel('addData');
+      this.hsAddDataService.dsSelected = 'url';
+      this.hsAddDataUrlService.typeSelected = type;
     }
   }
 }
