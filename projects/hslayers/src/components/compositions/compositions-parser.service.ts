@@ -371,10 +371,12 @@ export class HsCompositionsParserService {
       ) {
         this.loadWarningBootstrap(extent, app);
       } else {
-        this.hsMapService.fitExtent(
-          transformExtentValue(extent, this.hsMapService.getCurrentProj(app)),
-          app
-        );
+        this.hsMapService.loaded(app).then((map) => {
+          this.hsMapService.fitExtent(
+            transformExtentValue(extent, this.hsMapService.getCurrentProj(app)),
+            app
+          );
+        });
       }
     }
 
