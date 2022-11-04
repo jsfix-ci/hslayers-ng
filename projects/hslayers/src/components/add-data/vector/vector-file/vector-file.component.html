@@ -38,7 +38,7 @@
       (click)="add()">
       <i class="icon-plus" [hidden]="commonFileServiceRef.loadingToLayman"></i>
       <img [src]="configRef._ajaxLoaderPath" [hidden]="!commonFileServiceRef.loadingToLayman" />
-      <span [hidden]="commonFileServiceRef.loadingToLayman">{{'COMMON.add' | translateHs : {app} }}</span>
+      <span [hidden]="commonFileServiceRef.loadingToLayman">&nbsp;{{'COMMON.add' | translateHs : {app} }}</span>
       <span [hidden]="!commonFileServiceRef.loadingToLayman">{{'COMMON.uploading' | translateHs : {app} }}</span>
     </button>
   </div>
